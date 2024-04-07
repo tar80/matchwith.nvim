@@ -11,7 +11,7 @@
 ---@field public captures string[]
 ---@field public jump_key? string
 
----@class Internal
+---@class Cache
 ---@field private last_state LastState
 ---@field private startline? integer
 ---@field private endline? integer
@@ -34,7 +34,7 @@
 ---@field get_node fun(self:self,lang:string):TSNode?
 ---@field adjust_col fun(self:self,adjust?:boolean)
 ---@field illuminate fun(self:self):LastState
----@field for_each_captures fun(self:self,tsroot:TSNode,hltree:vim.treesitter.highlighter.Query,row:integer,start_col:integer,end_col:integer):TSNode|nil
+---@field for_each_captures fun(self:self,hlgroups:string[],tsroot:TSNode,hltree:vim.treesitter.highlighter.Query,row:integer,start_col:integer,end_col:integer):TSNode|nil, string[]?
 ---@field adjust_range fun(match_node:TSNode):WordRange
 ---@field get_pair_details fun(self:self,tslang:string,hlrange:WordRange):boolean,WordRange
 ---@field add_hl fun(self:self,group:Highlights,word_range:WordRange):nil

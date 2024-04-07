@@ -47,7 +47,7 @@ debounce_time
 Wait time before highlighting after cursor movement
 
             Type: `integer`
-            Default: 50
+            Default: 80
 
 ignore_filetypes
 Filetypes that do not perform matchwith

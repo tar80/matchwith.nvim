@@ -7,13 +7,13 @@ local UNIQ_ID = 'Matchwith'
 local HL_ON_SCREEN = _G.Matchwith_prepare.hlgroups[1]
 local HL_OFF_SCREEN = _G.Matchwith_prepare.hlgroups[2]
 local _default_options = {
-  debounce_time = 50,
+  debounce_time = 80,
   ignore_filetypes = { 'help' },
   ignore_buftypes = { 'nofile' },
   captures = { 'keyword.function', 'keyword.repeat', 'keyword.conditional', 'punctuation.bracket' },
 }
 
----@class Internal
+---@class Cache
 local _ = {
   last_state = {},
   ---startline = nil,
@@ -93,12 +93,13 @@ function matchwith.illuminate(self)
     if not hltree:query() then
       return
     end
-    local has_node = self:for_each_captures(tsroot, hltree, self.cur_row, self.cur_col, self.cur_col + 1)
-    if has_node then
+    local has_node, capture =
+      self:for_each_captures(self.opt.captures, tsroot, hltree, self.cur_row, self.cur_col, self.cur_col + 1)
+    if has_node and capture then
       local word_range1 = self.adjust_range(has_node)
       local off_screen, tsrange = self:get_pair_details(tslang, word_range1)
       local hlgroup = off_screen and HL_OFF_SCREEN or HL_ON_SCREEN
-      has_node = self:for_each_captures(tsroot, hltree, unpack(tsrange))
+      has_node = self:for_each_captures(capture, tsroot, hltree, unpack(tsrange))
       if has_node then
         local word_range2 = self.adjust_range(has_node)
         self:add_hl(hlgroup, word_range2)
@@ -114,18 +115,20 @@ function matchwith.illuminate(self)
 end
 
 ---Iteratively check if a node has a valid capture
-function matchwith.for_each_captures(self, tsroot, hltree, row, start_col, end_col)
+function matchwith.for_each_captures(self, hlgroups, tsroot, hltree, row, start_col, end_col)
   local iter = hltree:query():iter_captures(tsroot, self.bufnr, row, row + 1)
+  local cnt = false
   for int, node in iter do
-    if node and ts.node_contains(node, { row, start_col, row, end_col }) then
+    if node and (cnt or ts.node_contains(node, { row, start_col, row, end_col })) then
       ---@diagnostic disable-next-line: invisible
       local capture = hltree._query.captures[int] -- name of the capture in the query
-      if capture ~= nil then
-        for _, key in ipairs(self.opt.captures) do
-          if key == capture then
-            return node
+      if capture then
+        for _, hlgroup in ipairs(hlgroups) do
+          if hlgroup == capture then
+            return node, { capture }
           end
         end
+        cnt = #hlgroups == 1
       end
     end
   end
@@ -217,7 +220,7 @@ end
 -- end
 
 local timer = util.debounce(matchwith.opt.debounce_time, function()
-  matchwith:matching()
+  require('matchwith'):matching()
 end)
 
 util.autocmd({ 'CursorMoved', 'CursorMovedI' }, {
@@ -228,13 +231,13 @@ util.autocmd({ 'CursorMoved', 'CursorMovedI' }, {
   end,
 })
 
-util.autocmd({ 'WinEnter', 'BufEnter', 'BufWritePost' }, {
-  group = matchwith.augroup,
-  desc = 'Update matchpair highlight',
-  callback = function()
-    require('matchwith'):matching()
-  end,
-}, true)
+-- util.autocmd({ 'WinEnter', 'BufEnter', 'BufWritePost' }, {
+--   group = matchwith.augroup,
+--   desc = 'Update matchpair highlight',
+--   callback = function()
+--     require('matchwith'):matching()
+--   end,
+-- }, true)
 
 util.autocmd({ 'InsertEnter' }, {
   group = matchwith.augroup,
