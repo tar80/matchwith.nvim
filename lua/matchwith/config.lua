@@ -32,7 +32,8 @@ function M.set_options(opts)
     M.set_ignore_autocmd('BufEnter', 'buftype')
   end
   if opts.highlights then
-    matchwith.opt.set_hl(opts.highlights)
+    matchwith.opt.highlights = vim.tbl_extend('force', matchwith.opt.highlights, opts.highlights)
+    matchwith:set_hl()
   end
   if opts.captures then
     vim.list_extend(matchwith.opt.captures, opts.captures)
@@ -41,7 +42,7 @@ function M.set_options(opts)
     matchwith.opt.jump_key = opts.jump_key
     vim.cmd('silent! MatchDisable')
     vim.keymap.set({ 'n', 'x', 'o' }, opts.jump_key, function()
-      return '<Cmd>lua require("matchwith").jumping()<CR>'
+      return '<Cmd>lua require("matchwith"):jumping()<CR>'
     end, { expr = true, desc = 'Jump cursor to matchpair' })
   end
 end

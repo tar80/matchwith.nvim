@@ -1,5 +1,5 @@
 ---@alias Highlights 'Matchwith'|'MatchwithOut'
----@alias WordRange {row:integer,scol:integer,ecol:integer}
+---@alias WordRange {[1]:integer,[2]:integer,[3]:integer}
 ---@alias NodeRange {start_row:integer,start_col:integer,end_row:integer,end_col:integer}
 ---@alias LastState {[1]:WordRange,[2]:WordRange}|nil
 

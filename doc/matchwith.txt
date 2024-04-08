@@ -1,7 +1,7 @@
 matchwith.txt*  Simple matchparen and matchit. With Treesitter
 
 Author: tar80 (https://github.com/tar80)
-License: MIT License
+License: Apache License
 Repository: https://github.com/tar80/matchwith
 
 CONTENTS                                                    *matchwith-contents*

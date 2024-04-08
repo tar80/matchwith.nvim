@@ -14,7 +14,7 @@ local _default_options = {
 }
 
 ---@class Cache
-local _ = {
+local _cache = {
   last_state = {},
   ---startline = nil,
   ---endline = nil,
@@ -44,10 +44,10 @@ end
 
 -- Clear highlights for a matchpair
 function matchwith.clear_ns(self)
-  if _.startline and _.endline then
-    api.nvim_buf_clear_namespace(0, self.ns, _.startline, _.endline)
-    _.startline = nil
-    _.endline = nil
+  if _cache.startline and _cache.endline then
+    api.nvim_buf_clear_namespace(0, self.ns, _cache.startline, _cache.endline)
+    _cache.startline = nil
+    _cache.endline = nil
   end
 end
 
@@ -104,22 +104,19 @@ function matchwith.illuminate(self)
         local word_range2 = self.adjust_range(has_node)
         self:add_hl(hlgroup, word_range2)
         self:add_hl(hlgroup, word_range1)
-        match = {
-          [1] = { word_range1.row, word_range1.scol, word_range1.ecol },
-          [2] = { word_range2.row, word_range2.scol, word_range2.ecol },
-        }
+        match = { [1] = word_range1, [2] = word_range2 }
       end
     end
   end)
   return match
 end
 
----Iteratively check if a node has a valid capture
-function matchwith.for_each_captures(self, hlgroups, tsroot, hltree, row, start_col, end_col)
+-- Iteratively check if a node has a valid capture
+function matchwith.for_each_captures(self, hlgroups, tsroot, hltree, row, scol, ecol)
   local iter = hltree:query():iter_captures(tsroot, self.bufnr, row, row + 1)
   local cnt = false
   for int, node in iter do
-    if node and (cnt or ts.node_contains(node, { row, start_col, row, end_col })) then
+    if node and (cnt or ts.node_contains(node, { row, scol, row, ecol })) then
       ---@diagnostic disable-next-line: invisible
       local capture = hltree._query.captures[int] -- name of the capture in the query
       if capture then
@@ -144,15 +141,16 @@ function matchwith.adjust_range(match_node)
     end_col = -1
     end_row = end_row - 1
   end
-  return { row = start_row, scol = start_col, ecol = end_col }
+  -- return { row = start_row, scol = start_col, ecol = end_col }
+  return { start_row, start_col, end_col }
 end
 
 function matchwith.get_pair_details(self, tslang, hlrange)
   local off_screen = true
   local start_row, start_col, end_row, end_col = self:get_node(tslang):range()
-  _.startline = start_row
-  _.endline = end_row + 1
-  local is_start = (self.cur_row == end_row and hlrange.ecol == end_col)
+  _cache.startline = start_row
+  _cache.endline = end_row + 1
+  local is_start = (self.cur_row == end_row and hlrange[3] == end_col)
   if is_start then
     if start_row >= self.top_row then
       off_screen = false
@@ -167,10 +165,10 @@ function matchwith.get_pair_details(self, tslang, hlrange)
 end
 
 function matchwith.add_hl(self, hlgroup, word_range)
-  api.nvim_buf_add_highlight(self.bufnr, self.ns, hlgroup, word_range.row, word_range.scol, word_range.ecol)
+  api.nvim_buf_add_highlight(self.bufnr, self.ns, hlgroup, word_range[1], word_range[2], word_range[3])
 end
 
----Update matched pairs
+-- Update matched pairs
 function matchwith.matching(self, adjust)
   if vim.g.matchwith_disable or vim.b.matchwith_disable then
     return
@@ -178,34 +176,33 @@ function matchwith.matching(self, adjust)
   local session = self:new()
   session:clear_ns()
   session:adjust_col(adjust)
-  _.last_state = session:illuminate()
+  _cache.last_state = session:illuminate()
 end
 
-function matchwith.jumping()
+function matchwith.jumping(self)
   local vcount = vim.v.count1
   if vcount > 1 then
     vim.cmd(string.format('normal! %s%%', vcount))
     return
   end
-  if vim.tbl_isempty(_.last_state) then
+  if vim.tbl_isempty(_cache.last_state) then
     vim.cmd('normal! %')
     return
   end
-  local row, col = unpack(_.last_state[2])
+  local row, scol = unpack(_cache.last_state[2])
   row = math.min(vim.fn.line('$'), row + 1)
-  api.nvim_win_set_cursor(0, { row, col })
-  _.last_state = { _.last_state[2], _.last_state[1] }
+  api.nvim_win_set_cursor(0, { row, scol })
+  _cache.last_state = { _cache.last_state[2], _cache.last_state[1] }
 end
 
----Set highlights
-function matchwith.set_hl(self, highlights)
-  for name, value in pairs(highlights) do
+-- Set highlights
+function matchwith.set_hl(self)
+  for name, value in pairs(self.opt.highlights) do
     api.nvim_set_hl(0, name, value)
-    self.opt.highlights[name] = value
   end
 end
 
----Configure Matchwith settings
+-- Configure Matchwith settings
 function matchwith.setup(opts)
   require('matchwith.config').set_options(opts)
 end
@@ -259,7 +256,7 @@ util.autocmd({ 'ColorScheme' }, {
   group = matchwith.augroup,
   desc = 'Reload matchwith hlgroups',
   callback = function()
-    require('matchwith'):set_hl(matchwith.opt.highlights)
+    require('matchwith'):set_hl()
   end,
 }, true)
 

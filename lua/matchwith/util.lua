@@ -58,7 +58,7 @@ function M.debounce(timeout, callback)
       close = function()
         if timer then
           timer:stop()
-          ---@diagnostic disable-next-line: cast-local-type
+          timer:close()
         end
       end,
     },
