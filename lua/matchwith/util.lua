@@ -14,7 +14,22 @@ end
 ---@param int integer
 ---@return integer 0-based integer
 function M.zerobase(int)
-  return math.max(0, int - 1)
+  return int - 1
+  -- return math.max(0, int - 1)
+end
+
+---@param tbl table
+---@param key string|integer
+---@param value any
+---@return table<string|integer,table>
+function M.tbl_insert(tbl, key, value)
+  if type(tbl) ~= 'table' then
+    tbl = {}
+  end
+  if not tbl[key] then
+    tbl[key] = {}
+  end
+  return vim.list_extend(tbl[key], { value })
 end
 
 ---@param name string|string[]
