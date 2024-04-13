@@ -1,35 +1,52 @@
 local api = vim.api
 local ts = vim.treesitter
-local tsh = ts.highlighter
+local tsq = ts.query
 local util = require('matchwith.util')
 
 local UNIQ_ID = 'Matchwith'
-local HL_ON_SCREEN = _G.Matchwith_prepare.hlgroups[1]
-local HL_OFF_SCREEN = _G.Matchwith_prepare.hlgroups[2]
-_G.Matchwith_prepare.hlgroups = nil
-local _default_options = {
+local DEFALUT_OPTIONS = {
   debounce_time = 80,
-  ignore_filetypes = { 'help' },
+  ignore_filetypes = { 'vimdoc' },
   ignore_buftypes = { 'nofile' },
   captures = { 'keyword.function', 'keyword.repeat', 'keyword.conditional', 'punctuation.bracket' },
 }
+local HL_ON_SCREEN = _G.Matchwith_prepare.hlgroups[1]
+local HL_OFF_SCREEN = _G.Matchwith_prepare.hlgroups[2]
+_G.Matchwith_prepare.hlgroups = nil
 
----@class Cache
 local _cache = {
-  last_state = {},
-  ---startline = nil,
-  ---endline = nil,
+  last = { row = vim.NIL, state = {}, line = {} },
+  marker_range = {},
+  skip_matching = false,
+  changetick = 0,
 }
+---@class Cache
+local cache = vim.deepcopy(_cache)
 
 ---@class Matchwith
 local matchwith = {}
 matchwith.ns = api.nvim_create_namespace(UNIQ_ID)
 matchwith.augroup = vim.api.nvim_create_augroup(UNIQ_ID, {})
-matchwith.opt = vim.tbl_extend('keep', _default_options, _G.Matchwith_prepare)
+matchwith.opt = vim.tbl_extend('keep', DEFALUT_OPTIONS, _G.Matchwith_prepare)
 _G.Matchwith_prepare = nil
 
+-- Adjust column if mode is insert-mode
+local function _adjust_col(mode, col)
+  local dec = util.is_insert_mode(mode) and 1 or 0
+  return math.max(0, col - dec)
+end
+
+-- Convert range from Range4 to WordRange(row,scol,ecol)
+---@package
+---@param node TSNode|Range4
+---@return WordRange
+local function _convert_range(node)
+  local start_row, start_col, _, end_col = ts.get_node_range(node)
+  return { start_row, start_col, end_col }
+end
+
 -- Start a new instance
-function matchwith.new()
+function matchwith.new(row, col)
   local pos = api.nvim_win_get_cursor(0)
   local self = setmetatable({}, { __index = matchwith })
   self.mode = api.nvim_get_mode().mode
@@ -38,110 +55,80 @@ function matchwith.new()
   -- adjust row to zero-base
   self.top_row = util.zerobase(vim.fn.line('w0'))
   self.bottom_row = util.zerobase(vim.fn.line('w$'))
-  self.cur_row = util.zerobase(pos[1])
-  self.cur_col = pos[2]
+  self.cur_row = row or util.zerobase(pos[1])
+  self.cur_col = col or _adjust_col(self.mode, pos[2])
+  self.changetick = vim.b[self.bufnr].changedtick
   return self
 end
 
 -- Clear highlights for a matchpair
 function matchwith.clear_ns(self)
-  if _cache.startline and _cache.endline then
-    api.nvim_buf_clear_namespace(0, self.ns, _cache.startline, _cache.endline)
-    _cache.startline = nil
-    _cache.endline = nil
+  if not vim.tbl_isempty(cache.marker_range) then
+    api.nvim_buf_clear_namespace(0, self.ns, cache.marker_range[1], cache.marker_range[2])
+    return true
   end
+  return false
 end
 
--- Convert range from Range4 to WordRange(row,scol,ecol)
----@param node TSNode|Range4
----@return WordRange
-local function _adjust_range(node)
-  local start_row, start_col, _, end_col = ts.get_node_range(node)
-  return { start_row, start_col, end_col }
-end
-
--- Illuminate a matchpair
-function matchwith.illuminate(self)
-  local highlighter = tsh.active[self.bufnr]
-  if not highlighter then
-    return
+---Get match items
+function matchwith.get_matches(self)
+  ---@type MatchItem?, Range4[], Range4[]
+  local match, ranges, line = nil, {}, {}
+  local ok, lang_tree = pcall(ts.get_parser, self.bufnr, self.filetype)
+  if not ok or not lang_tree then
+    return match, ranges, line
   end
-  local ranges = {}
-  highlighter.tree:for_each_tree(function(tree, ltree)
-    if not tree then
-      return
-    end
-    local tsroot = tree:root()
+  ---@type integer
+  local ptn
+  lang_tree:for_each_tree(function(tstree, ltree)
+    local tsroot = tstree:root()
     local root_start_row, _, root_end_row, _ = tsroot:range()
-    -- Only worry about trees within the line range
     if root_start_row > self.cur_row or root_end_row < self.cur_row then
       return
     end
-    local tslang = ltree:lang()
-    local query = highlighter:get_query(tslang):query()
-    -- Some injected languages may not have highlight queries.
-    if not query then
+    local lang = ltree:lang()
+    local queries = tsq.get(lang, 'highlights')
+    if not queries then
       return
     end
-    local match, match_ranges = self:for_each_captures(tsroot, query, self.cur_row, self.cur_col, self.cur_col + 1)
-    if match.node and match_ranges then
-      local hlgroup, pair_range = self:get_matchpair(match, match_ranges)
-      if not pair_range then
-        return
-      end
-      local word_range = _adjust_range(match.range)
-      pair_range = _adjust_range(pair_range)
-      self:add_hl(hlgroup, word_range)
-      self:add_hl(hlgroup, pair_range)
-      ranges = { [1] = word_range, [2] = pair_range }
-    end
-  end)
-  return ranges
-end
-
--- Iteratively check if a node has a valid capture
-function matchwith.for_each_captures(self, tsroot, query, row, scol, ecol)
-  ---@type string, integer, TSNode?, Range4
-  local _cpt, _ptn, tsnode, tsrange
-  ---@type table<integer,{child:string,range:WordRange[]}>
-  local match_ranges = {}
-  local _cpts = self.opt.captures
-  local iter = query:iter_matches(tsroot, self.bufnr, row, row + 1, { all = true })
-  for pattern, matches in iter do
-    for int, nodes in pairs(matches) do
-      _cpt = query.captures[int]
-      if vim.tbl_contains(_cpts, _cpt) then
-        for _, node in ipairs(nodes) do
-          local range = { node:range() }
-          match_ranges[pattern] = util.tbl_insert(match_ranges, pattern, range)
-          if row == range[1] then
-            --TODO:feat cache system
-            if (range[2] <= scol) and (range[4] >= ecol) then
-              tsrange = range
-              tsnode = node
-              _ptn = pattern
-              _cpts = { _cpt }
+    local iter = queries:iter_matches(tsroot, self.bufnr, self.cur_row, self.cur_row + 1, { all = true })
+    for pattern, matches in iter do
+      for int, nodes in pairs(matches) do
+        local capture = queries.captures[int]
+        if vim.tbl_contains(self.opt.captures, capture) then
+          for _, node in ipairs(nodes) do
+            local tsrange = { node:range() }
+            ranges[pattern] = util.tbl_insert(ranges, pattern, tsrange)
+            if tsrange[1] == self.cur_row then
+              table.insert(line, tsrange)
+              if (tsrange[2] <= self.cur_col) and (tsrange[4] > self.cur_col) then
+                local parent = node:parent()
+                if parent then
+                  match = { node = parent, range = tsrange }
+                  ptn = pattern
+                end
+              end
             end
           end
         end
       end
     end
-  end
-  return { node = tsnode, range = tsrange }, match_ranges[_ptn]
+  end)
+  return match, ranges[ptn] or {}, line
 end
 
 -- Whether the cursor position is at the node starting point
 ---@param cur_row integer
+---@param current Range4
 ---@param parent Range4
----@param node Range4
 ---@return boolean is_start
-local function _direction(cur_row, parent, node)
+local function _is_start_node(cur_row, current, parent)
   if cur_row == parent[3] then
-    if node[4] == parent[4] then
+    if current[4] == parent[4] then
       return true
     end
     if parent[1] ~= parent[3] then
-      return node[2] == parent[2]
+      return current[2] == parent[2]
     end
   end
   return false
@@ -152,84 +139,125 @@ end
 ---@param node TSNode?
 ---@param ranges Range4[]
 ---@param count integer
----@return Range4|nil
-local function _detect_node(next, node, ranges, count)
+---@return Range4|vim.NIL
+local function _find_sibling(next, node, ranges, count)
   for _ = 1, count, 1 do
     for _, range in ipairs(ranges) do
       if not node then
-        return
+        return vim.NIL
       end
-      if vim.deep_equal(range, {node:range()}) then
+      if vim.deep_equal(range, { node:range() }) then
         return range
       end
     end
     node = next and node:next_sibling() or node:prev_sibling()
   end
+  return vim.NIL
 end
 
 -- Get hlgroup and pair range
 function matchwith.get_matchpair(self, match, ranges)
-  local hlgroup = HL_ON_SCREEN
-  local parent = match.node:parent()
-  if not parent then
-    return hlgroup
-  end
-  local parent_range = { parent:range() }
-  local count = parent:child_count() - 1
-  _cache.startline = parent_range[1]
-  _cache.endline = parent_range[3] + 1
-  local is_start = _direction(self.cur_row, parent_range, match.range)
+  local node = match.node
+  local node_range = { node:range() }
+  local is_start = _is_start_node(self.cur_row, match.range, node_range)
   -- Query.iter_matches may not be able to get the bracket range, so we need to add it
-  if parent_range[1] ~= parent_range[3] then
-    local t = is_start and { parent_range[1], parent_range[2], parent_range[1], parent_range[2] + 1 }
-      or { parent_range[3], parent_range[4] - 1, parent_range[3], parent_range[4] }
-    table.insert(ranges, t)
+  if node_range[1] ~= node_range[3] then
+    local pairspec = is_start and { node_range[1], node_range[2], node_range[1], node_range[2] + 1 }
+      or { node_range[3], node_range[4] - 1, node_range[3], node_range[4] }
+    table.insert(ranges, pairspec)
   end
-  ---@type Range4|nil
-  local pair_range
+  ---@type Range4|vim.NIL
+  local pair_range = vim.NIL
+  local hlgroup = HL_ON_SCREEN
+  local count = node:child_count() - 1
   if is_start then
-    if parent_range[1] < self.top_row then
+    if node_range[1] < self.top_row then
       hlgroup = HL_OFF_SCREEN
     end
-    pair_range = _detect_node(true, parent:child(0), ranges, count)
+    pair_range = _find_sibling(true, node:child(0), ranges, count)
   else
-    if parent_range[3] > self.bottom_row then
+    if node_range[3] > self.bottom_row then
       hlgroup = HL_OFF_SCREEN
     end
-    pair_range = _detect_node(false, parent:child(count), ranges, count)
+    pair_range = _find_sibling(false, node:child(count), ranges, count)
   end
-  return hlgroup, pair_range
+  local marker_range = { node_range[1], node_range[3] + 1 }
+  return hlgroup, pair_range, marker_range
 end
 
-function matchwith.add_hl(self, hlgroup, word_range)
+function matchwith.draw_markers(self, hlgroup, match, pair)
+  self:marker(hlgroup, _convert_range(match))
+  self:marker(hlgroup, _convert_range(pair))
+  return { match, pair }
+end
+
+function matchwith.marker(self, hlgroup, word_range)
   api.nvim_buf_add_highlight(self.bufnr, self.ns, hlgroup, unpack(word_range))
 end
 
--- Adjust columns if mode is insert mode
-function matchwith.adjust_col(self, adjust)
-  local col = self.cur_col
-  if adjust then
-    col = col - 1
-  else
-    local dec = (self.mode == 'i' or self.mode == 'R') and 1 or 0
-    col = col - dec
-  end
-  self.cur_col = math.max(0, col)
-end
-
 -- Update matched pairs
-function matchwith.matching(self, adjust)
+function matchwith.matching(row, col)
   if vim.g.matchwith_disable or vim.b.matchwith_disable then
     return
   end
-  if _cache.is_jump then
-    _cache.is_jump = false
+  if cache.skip_matching then
+    cache.skip_matching = false
     return
   end
-  local session = self:new()
-  session:clear_ns()
-  session:adjust_col(adjust)
-  _cache.last_state = session:illuminate()
+
+  local session = matchwith.new(row, col)
+  if session.filetype == '' or vim.tbl_contains(session.opt.ignore_filetypes, session.filetype) then
+    return
+  end
+  if (session.cur_row == cache.last.row) and (session.changetick == cache.changetick) then
+    if
+      not vim.tbl_isempty(cache.last.state)
+      and (cache.last.state[1][2] <= session.cur_col)
+      and (cache.last.state[1][4] > session.cur_col)
+    then
+      return
+    end
+    cache.last.state = {}
+  else
+    cache.changetick = session.changetick
+  end
+  local clear_marker = session:clear_ns()
+  if clear_marker then
+    cache.marker_range = {}
+  end
+  local match, ranges, line = session:get_matches()
+  cache.last.line = line
+  if not match then
+    cache.last.row = session.cur_row
+    cache.last.state = {}
+    return
+  end
+  if vim.tbl_isempty(ranges) then
+    cache.last = { row = session.cur_row, state = {}, ranges = {} }
+    return
+  end
+  local hlgroup, pair_range, marker_range = session:get_matchpair(match, ranges)
+  if pair_range ~= vim.NIL then
+    ---@cast pair_range -vim.NIL
+    cache.marker_range = marker_range
+    cache.last.row = session.cur_row
+    cache.last.state = session:draw_markers(hlgroup, match.range, pair_range)
+  end
+end
+
+function matchwith.update_markers(self)
+  local cur_row = util.zerobase(api.nvim_win_get_cursor(0)[1])
+  local start_row, end_row = cache.last.state[1][1], cache.last.state[2][1]
+  local in_screen
+  if cur_row >= start_row then
+    in_screen = vim.fn.line('w0') <= start_row
+  else
+    in_screen = vim.fn.line('w$') > end_row
+  end
+  local hlgroup = in_screen and HL_ON_SCREEN or HL_OFF_SCREEN
+  self.bufnr = 0
+  self:clear_ns()
+  self:draw_markers(hlgroup, cache.last.state[1], cache.last.state[2])
 end
 
 function matchwith.jumping(self)
@@ -238,17 +266,28 @@ function matchwith.jumping(self)
     vim.cmd(string.format('normal! %s%%', vcount))
     return
   end
-  if vim.tbl_isempty(_cache.last_state) then
-    vim.cmd('normal! %')
-    return
+  local skip = false
+  if vim.tbl_isempty(cache.last.state) then
+    if vim.tbl_isempty(cache.last.line) then
+      vim.cmd('normal! %')
+      return
+    end
+    local pos = api.nvim_win_get_cursor(0)
+    for _, range in ipairs(cache.last.line) do
+      if (range[1] + 1) == pos[1] and (range[2] > pos[2]) then
+        self.matching(range[1], range[2])
+        skip = true
+        break
+      end
+    end
   end
-  local row, scol, ecol = unpack(_cache.last_state[2])
-
-  local hlgroup = api.nvim_buf_get_extmarks(0, self.ns, { row, scol }, { row, ecol }, { details = true })[1][4].hl_group
-  _cache.is_jump = hlgroup == HL_ON_SCREEN
-  row = math.min(vim.fn.line('$'), row + 1)
-  api.nvim_win_set_cursor(0, { row, scol })
-  _cache.last_state = { _cache.last_state[2], _cache.last_state[1] }
+  cache.skip_matching = true
+  local row, scol = unpack(cache.last.state[2])
+  api.nvim_win_set_cursor(0, { row + 1, scol })
+  if not skip then
+    self:update_markers()
+  end
+  cache.last.state = { [1] = cache.last.state[2], [2] = cache.last.state[1] }
 end
 
 -- Configure Matchwith settings
@@ -256,7 +295,7 @@ function matchwith.setup(opts)
   require('matchwith.config').set_options(opts)
 end
 
----TODO: atode
+---TODO: later
 ---Get and set user-defined matchpairs
 -- matchwith.set_matchpairs = function(self)
 --   self.matchpairs = vim.tbl_map(function(v)
@@ -266,7 +305,7 @@ end
 -- end
 
 local timer = util.debounce(matchwith.opt.debounce_time, function()
-  require('matchwith'):matching()
+  require('matchwith').matching()
 end)
 
 util.autocmd({ 'CursorMoved', 'CursorMovedI' }, {
@@ -277,19 +316,11 @@ util.autocmd({ 'CursorMoved', 'CursorMovedI' }, {
   end,
 })
 
-util.autocmd({ 'InsertEnter' }, {
+util.autocmd({ 'InsertEnter', 'InsertLeave' }, {
   group = matchwith.augroup,
   desc = 'Update matchpair highlight',
   callback = function()
-    require('matchwith'):matching(true)
-  end,
-})
-
-util.autocmd({ 'InsertLeave' }, {
-  group = matchwith.augroup,
-  desc = 'Update matchpair highlight',
-  callback = function()
-    require('matchwith'):matching()
+    require('matchwith').matching()
   end,
 })
 

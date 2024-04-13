@@ -1,11 +1,12 @@
----@alias Highlights 'Matchwith'|'MatchwithOut'
+---@alias Hlgroup 'Matchwith'|'MatchwithOut'
+-- Details 1:`row`, 2:`start_row`, 3:`end_row`
 ---@alias WordRange {[1]:integer,[2]:integer,[3]:integer}
----@alias NodeRange {start_row:integer,start_col:integer,end_row:integer,end_col:integer}
----@alias LastState {[1]:WordRange,[2]:WordRange}|nil
----@alias MatchItem {node:TSNode?,range:Range4}
+---@alias MatchItem {node:TSNode,range:Range4}
+---@alias Last {row:integer|vim.NIL,state:LastState,line:Range4[]}
+---@alias LastState {[1]:Range4,[2]:Range4}
 
 ---@class Options
----@field public highlights {[Highlights]:vim.api.keyset.highlight}
+---@field public highlights {[Hlgroup]:vim.api.keyset.highlight}
 ---@field public debounce_time integer
 ---@field public ignore_filetypes string[]
 ---@field public ignore_buftypes string[]
@@ -13,9 +14,10 @@
 ---@field public jump_key? string
 
 ---@class Cache
----@field private last_state LastState
----@field private startline? integer
----@field private endline? integer
+---@field private last Last
+---@field private marker_range integer[]
+---@field private skip_matching boolean
+---@field private changetick integer
 
 ---@class Instance
 ---@field public mode string
@@ -25,22 +27,24 @@
 ---@field public bottom_row integer
 ---@field public cur_row integer
 ---@field public cur_col integer
+---@field public changetick integer
 
 ---@class Matchwith: Instance
 ---@field public ns integer
 ---@field public augroup integer
 ---@field public opt Options
----@field new fun(self:self):self
----@field clear_ns fun(self:self,startline?:integer,endline?:integer):nil
----@field illuminate fun(self:self):LastState|nil
----@field for_each_captures fun(self:self,tsroot:TSNode,query:vim.treesitter.Query,row:integer,start_col:integer,end_col:integer):MatchItem, Range4[]?
----@field get_matchpair fun(self:self,match:MatchItem,ranges:Range4[]):string, Range4|nil
----@field add_hl fun(self:self,group:Highlights,word_range:WordRange):nil
+---@field new fun(row?:integer,col?:integer):Matchwith
+---@field clear_ns fun(self:self):boolean
+---@field get_matches fun(self:self):MatchItem?,Range4[],Range4[]
+---@field get_matchpair fun(self:self,match:MatchItem,ranges:Range4[]):Hlgroup, Range4|vim.NIL,integer[]
+---@field draw_markers fun(self:self,hlgroup:Hlgroup,match:Range4,pair:Range4):LastState
+---@field marker fun(self:self,group:Hlgroup,word_range:WordRange)
 ---@field adjust_col fun(self:self,adjust?:boolean)
----@field matching fun(self:self,adjust?:boolean)
+---@field matching fun(row?:integer,col?:integer)
+---@field update_markers fun(self:self)
 ---@field jumping fun(self:self)
----@field setup fun(opts:Matchwith):nil
----@field set_matchpairs fun(self:self):nil
+---@field setup fun(opts:Matchwith)
+---@field set_matchpairs fun(self:self)
 
 ---@class TODO
 ---@field matchpairs table<integer,string[]>

@@ -49,7 +49,7 @@ function M.set_options(opts)
   end
   if opts.ignore_filetypes then
     vim.list_extend(matchwith.opt.ignore_filetypes, opts.ignore_filetypes)
-    _set_ignore_autocmd('FileType', 'filetype')
+    -- _set_ignore_autocmd('FileType', 'filetype')
   end
   if opts.ignore_buftypes then
     vim.list_extend(matchwith.opt.ignore_buftypes, opts.ignore_buftypes)

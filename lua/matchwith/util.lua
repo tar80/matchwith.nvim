@@ -18,6 +18,12 @@ function M.zerobase(int)
   -- return math.max(0, int - 1)
 end
 
+---@parame mode string
+---@return boolean
+function M.is_insert_mode(mode)
+  return (mode == 'i' or mode == 'R')
+end
+
 ---@param tbl table
 ---@param key string|integer
 ---@param value any
