@@ -245,17 +245,17 @@ function matchwith.matching(row, col)
   end
 end
 
-function matchwith.update_markers(self)
-  local cur_row = util.zerobase(api.nvim_win_get_cursor(0)[1])
+function matchwith.update_markers(self, row)
   local start_row, end_row = cache.last.state[1][1], cache.last.state[2][1]
   local in_screen
-  if cur_row >= start_row then
+  if row >= start_row then
     in_screen = vim.fn.line('w0') <= start_row
   else
     in_screen = vim.fn.line('w$') > end_row
   end
   local hlgroup = in_screen and HL_ON_SCREEN or HL_OFF_SCREEN
   self.bufnr = 0
+  self.cur_row = row
   self:clear_ns()
   self:draw_markers(hlgroup, cache.last.state[1], cache.last.state[2])
 end
@@ -283,9 +283,10 @@ function matchwith.jumping(self)
   end
   cache.skip_matching = true
   local row, scol = unpack(cache.last.state[2])
-  api.nvim_win_set_cursor(0, { row + 1, scol })
+  row = row + 1
+  api.nvim_win_set_cursor(0, { row, scol })
   if not skip then
-    self:update_markers()
+    self:update_markers(row)
   end
   cache.last.state = { [1] = cache.last.state[2], [2] = cache.last.state[1] }
 end

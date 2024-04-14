@@ -41,7 +41,7 @@
 ---@field marker fun(self:self,group:Hlgroup,word_range:WordRange)
 ---@field adjust_col fun(self:self,adjust?:boolean)
 ---@field matching fun(row?:integer,col?:integer)
----@field update_markers fun(self:self)
+---@field update_markers fun(self:self,row:integer)
 ---@field jumping fun(self:self)
 ---@field setup fun(opts:Matchwith)
 ---@field set_matchpairs fun(self:self)
