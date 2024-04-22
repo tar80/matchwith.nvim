@@ -9,6 +9,8 @@ CONTENTS                                                    *matchwith-contents*
 Interface                                                  |matchwith-interface|
   variable                                                  |matchwith-variable|
   function                                                  |matchwith-function|
+  configuration                                        |matchwith-configuration|
+  hlgroup                                                   |matchiwith-hlgroup|
 
 ==============================================================================
 INTERFACE                                                  *matchwith-interface*
@@ -36,6 +38,7 @@ setup({options})                                      *matchwith.config.setup()*
               {highlights}        (table):    |matchwith-highlight|
               {captures}          (table):    |matchwith-capture|
               {jump_key}          (string):   |matchwith-jumpkey|
+              {indicator}         (integer):  |matchwith-indicator|
 
 
 ------------------------------------------------------------------------------
@@ -43,25 +46,25 @@ CONFIGURATION                                          *matchwith-configuration*
 
 Default settings ~
 
-debounce_time
+debounce_time                                               *matchwith-debounce*
 Wait time before highlighting after cursor movement
 
             Type: `integer`
-            Default: 80
+            Default: 100
 
-ignore_filetypes
+ignore_filetypes                                            *matchwith-filetype*
 Filetypes that do not perform matchwith
 
             Type: `table`
             Default: { "help" }
 
-ignore_buftypes
+ignore_buftypes                                              *matchwith-buftype*
 Buftypes that do not perform matchwith
 
             Type: `table`
             Default: { "nofile" }
 
-highlights
+highlights                                                 *matchwith-highlight*
 Highlights applied to matchpair
 
             Type: `table
@@ -75,11 +78,16 @@ Highlights applied to matchpair
                     fg = `Error`,
                     bg = `Normal`,
                     underline = true
+                },
+                NormalFloat(optional) = {
+                    fg = `MatchParen`,
+                    bg = `MatchParen`,
+                    reverse = true
                 }
             }
 
 
-captures
+captures                                                     *matchwith-capture*
 Captures to apply matchwith to
 
             Type: `table`
@@ -90,14 +98,22 @@ Captures to apply matchwith to
                 "punctuation.bracket"
             }
 
-jump_key
+jump_key                                                     *matchwith-jumpkey*
 Key to move cursor to the matched pair position
 
             Type: `string`
             Default: nil
 
+indicator                                                  *matchwith-indicator*
+Number of milliseconds to display indicator on marker
+For example, if the cursor has a box shape, the highlight of the bracket under
+the cursor is unknown, so an indicator is displayed.
+
+            Type: `integer`
+            Defalut: 0
+
 ------------------------------------------------------------------------------
-HIGHLIGHT                                                  *matchwith-highlight*
+HLGROUP                                                      *matchwith-hlgroup*
 
 *Matchwith*
 
