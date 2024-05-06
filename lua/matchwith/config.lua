@@ -1,14 +1,12 @@
 local matchwith = require('matchwith')
-local util = require('matchwith.util')
 
-local UNIQ_ID = 'Matchwith/config'
 local M = {}
 
 ---@param opts Options Global options
+---@return boolean is_ok
 function M.set_options(opts)
   if not opts then
-    util.notify(UNIQ_ID, 'Error: Requires arguments', vim.log.levels.ERROR)
-    return
+    return false
   end
   vim.validate({
     debounce_time = { opts.debounce_time, 'number', true },
@@ -16,36 +14,45 @@ function M.set_options(opts)
     ignore_buftypes = { opts.ignore_buftypes, 'table', true },
     jump_key = { opts.jump_key, 'string', true },
     captures = { opts.captures, 'table', true },
-    highlights = { opts.highlights, 'table', true },
     indicator = { opts.indicator, 'number', true },
+    sign = { opts.sign, 'boolean', true },
+    symbols = { opts.symbols, 'table', true },
   })
   if opts.debounce_time then
-    matchwith.opt.debounce_time = opts.debounce_time
+    vim.g.matchwith_debounce_time = opts.debounce_time
   end
   if opts.ignore_filetypes then
-    vim.list_extend(matchwith.opt.ignore_filetypes, opts.ignore_filetypes)
-    -- _set_ignore_autocmd('FileType', 'filetype')
+    vim.list_extend(vim.g.matchwith_ignore_filetypes, opts.ignore_filetypes)
   end
   if opts.ignore_buftypes then
-    vim.list_extend(matchwith.opt.ignore_buftypes, opts.ignore_buftypes)
+    vim.list_extend(vim.g.matchwith_ignore_buftypes, opts.ignore_buftypes)
   end
   if opts.captures then
-    vim.list_extend(matchwith.opt.captures, opts.captures)
+    vim.list_extend(vim.g.matchwith_captures, opts.captures)
   end
   if opts.jump_key then
-    matchwith.opt.jump_key = opts.jump_key
     vim.cmd('silent! MatchDisable')
     vim.keymap.set({ 'n', 'x', 'o' }, opts.jump_key, function()
       return '<Cmd>lua require("matchwith").jumping()<CR>'
     end, { expr = true, desc = 'Jump cursor to matchpair' })
   end
-  if opts.highlights then
-    matchwith.opt.highlights = vim.tbl_extend('force', matchwith.opt.highlights, opts.highlights)
-    util.set_hl(matchwith.opt.highlights)
-  end
   if opts.indicator and (opts.indicator > 0) then
-    matchwith.opt.indicator = opts.indicator
+    local name = 'NormalFloat'
+    local value = { link = matchwith.hlgroups.off }
+    vim.api.nvim_set_hl(matchwith.ns, name, value)
+    vim.g.matchwith_indicator = opts.indicator
   end
+  if opts.sign then
+    local name = matchwith.hlgroups.sign
+    local fg = vim.api.nvim_get_hl(0, { name = matchwith.hlgroups.off }).fg
+    local value = { default = true, fg = fg, bold = true }
+    vim.api.nvim_set_hl(0, name, value)
+    vim.g.matchwith_sign = opts.sign
+  end
+  if opts.symbols then
+    vim.g.symbols = opts.symbols
+  end
+  return true
 end
 
 return M

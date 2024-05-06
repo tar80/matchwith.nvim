@@ -5,20 +5,7 @@ local fn = vim.fn
 local ts = vim.treesitter
 local tsq = ts.query
 
-local UNIQ_ID = 'Matchwith'
-local DEFALUT_OPTIONS = {
-  debounce_time = 100,
-  indicator = 0,
-  ignore_filetypes = { 'vimdoc' },
-  ignore_buftypes = { 'nofile' },
-  captures = { 'keyword.function', 'keyword.repeat', 'keyword.conditional', 'punctuation.bracket' },
-}
-local DIR_SIGN =
-  { [1] = '↑', [2] = '↓', [3] = '→', [4] = '↗', [5] = '↘', [6] = '←', [7] = '↖', [8] = '↙' }
-local HL_ON_SCREEN = _G.Matchwith_prepare.hlgroups[1]
-local HL_OFF_SCREEN = _G.Matchwith_prepare.hlgroups[2]
-_G.Matchwith_prepare.hlgroups = nil
-
+local UNIQ_ID = 'Matchwith-nvim'
 local _cache = {
   last = { row = vim.NIL, state = {}, line = {} },
   marker_range = {},
@@ -31,10 +18,8 @@ local cache = vim.deepcopy(_cache)
 ---@class Matchwith
 local matchwith = {}
 matchwith.ns = api.nvim_create_namespace(UNIQ_ID)
-matchwith.augroup = api.nvim_create_augroup(UNIQ_ID, {})
-matchwith.timer = util.set_timer()
-matchwith.opt = vim.tbl_extend('keep', DEFALUT_OPTIONS, _G.Matchwith_prepare)
-_G.Matchwith_prepare = nil
+matchwith.hlgroups = _G.Matchwith_hlgroup
+_G.Matchwith_hlgroup = nil
 
 -- Adjust column for insert-mode
 ---@package
@@ -69,6 +54,13 @@ function matchwith.new(row, col)
   self['bottom_row'] = util.zerobase(fn.line('w$'))
   self['cur_row'] = row or util.zerobase(pos[1])
   self['cur_col'] = col or _adjust_col(self.mode, pos[2])
+  self['opt'] = {
+    ignore_filetypes = vim.g.matchwith_ignore_filetypes,
+    captures = vim.g.matchwith_captures,
+    indicator = vim.g.matchwith_indicator,
+    sign = vim.g.matchwith_sign,
+    symbols = vim.g.matchwith_symbols,
+  }
   return self
 end
 
@@ -76,7 +68,8 @@ end
 function matchwith.clear_ns(self)
   local clear = false
   if not vim.tbl_isempty(cache.marker_range) then
-    api.nvim_buf_clear_namespace(0, self.ns, 0, -1)
+    api.nvim_buf_clear_namespace(0, self.ns, cache.marker_range[1], cache.marker_range[2])
+    -- api.nvim_buf_clear_namespace(0, self.ns, 0, -1)
     clear = true
   end
   return clear
@@ -110,7 +103,7 @@ function matchwith.get_matches(self)
         if vim.tbl_contains(self.opt.captures, capture) then
           for _, node in ipairs(nodes) do
             local tsrange = { node:range() }
-            ranges[pattern] = util.tbl_insert(ranges, pattern, tsrange)
+            util.tbl_insert(ranges, pattern, tsrange)
             if tsrange[1] == self.cur_row then
               table.insert(line, tsrange)
               if (tsrange[2] <= self.cur_col) and (tsrange[4] > self.cur_col) then
@@ -153,9 +146,7 @@ function matchwith.pair_marker_state(self, is_start, pair)
   local wincol = fn.wincol()
   local win_width = api.nvim_win_get_width(self.winid)
   if api.nvim_get_option_value('list', { win = self.winid }) then
-    local listchars = vim.opt.listchars:get()
-    local precedes = listchars.precedes and 1 or 0
-    local extends = listchars.extends and 1 or 0
+    local extends, precedes = util.expand_wrap_symbols()
     win_width = win_width - extends
     leftcol = leftcol + precedes
   end
@@ -175,7 +166,7 @@ function matchwith.pair_marker_state(self, is_start, pair)
   elseif is_over or (pair_row > self.bottom_row) then
     num = num + 2
   end
-  local resp = (num > 0) and { HL_OFF_SCREEN, DIR_SIGN[num] } or { HL_ON_SCREEN }
+  local resp = (num > 0) and { self.hlgroups.off, self.opt.symbols[num] } or { self.hlgroups.on }
   return resp[1], resp[2]
 end
 
@@ -226,7 +217,7 @@ function matchwith.draw_markers(self, is_start, match, pair)
   self:add_marker(hlgroup, word_range)
   self:add_marker(hlgroup, pair_range)
   if not is_insert and (fn.foldclosed(self.cur_row + 1) == -1) then
-    if hlgroup == HL_OFF_SCREEN then
+    if hlgroup == self.hlgroups.off then
       self:set_indicator(symbol)
     end
   end
@@ -238,8 +229,13 @@ function matchwith.add_marker(self, hlgroup, word_range)
 end
 
 function matchwith.set_indicator(self, symbol)
-  if (self.opt.indicator > 0) and symbol then
-    util.indicator(symbol, self.opt.indicator, self.cur_row, self.cur_col)
+  if symbol then
+    if self.opt.sign then
+      local opts = { sign_hl_group = matchwith.hlgroups.sign, sign_text = symbol, priority = 0 }
+      util.ext_sign(self.ns, self.cur_row, self.cur_col, opts)
+    elseif self.opt.indicator > 0 then
+      util.indicator(self.ns, symbol, self.opt.indicator, self.cur_row, self.cur_col)
+    end
   end
 end
 
@@ -328,54 +324,10 @@ end
 
 -- Configure Matchwith settings
 function matchwith.setup(opts)
-  require('matchwith.config').set_options(opts)
+  local ok = require('matchwith.config').set_options(opts)
+  if not ok then
+    util.notify(UNIQ_ID, 'Error: Requires arguments', vim.log.levels.ERROR)
+  end
 end
-
----TODO: later
----Get and set user-defined matchpairs
--- matchwith.set_matchpairs = function(self)
---   self.matchpairs = vim.tbl_map(function(v)
---     -- if not v:find('[([{]') then
---     return vim.split(v, ':', { plain = true })
---   end, vim.split(vim.bo[self.bufnr].matchpairs, ',', { plain = true }))
--- end
-
-util.autocmd('BufEnter', {
-  desc = 'Matchwith ignore buftypes',
-  group = matchwith.augroup,
-  callback = function()
-    if vim.b.matchwith_disable or vim.bo.buftype == '' then
-      return
-    end
-    local ignore_items = matchwith.opt.ignore_buftypes
-    vim.b.matchwith_disable = vim.tbl_contains(ignore_items, vim.bo.buftype)
-  end,
-})
-
-util.autocmd({ 'CursorMoved', 'CursorMovedI' }, {
-  desc = 'Update matchpair highlight',
-  group = matchwith.augroup,
-  callback = function()
-    matchwith.timer.debounce(matchwith.opt.debounce_time, function()
-      matchwith.matching()
-    end)
-  end,
-})
-
-util.autocmd({ 'InsertEnter', 'InsertLeave' }, {
-  desc = 'Update matchpair highlight',
-  group = matchwith.augroup,
-  callback = function()
-    matchwith.matching()
-  end,
-})
-
-util.autocmd({ 'ColorScheme' }, {
-  desc = 'Reload matchwith hlgroups',
-  group = matchwith.augroup,
-  callback = function()
-    util.set_hl(matchwith.opt.highlights)
-  end,
-}, true)
 
 return matchwith

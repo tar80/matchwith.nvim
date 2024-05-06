@@ -80,8 +80,8 @@ Highlights applied to matchpair
                     underline = true
                 },
                 NormalFloat(optional) = {
-                    fg = `MatchParen`,
-                    bg = `MatchParen`,
+                    fg = `Normal`,
+                    bg = `Normal`,
                     reverse = true
                 }
             }
