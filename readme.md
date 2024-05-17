@@ -1,1 +1,42 @@
-# WIP
+# matchwith.nvim
+
+matchwith.nvim is a matchparen and matchit alternative plugin.  
+Provides simpler functionality using treesitter.
+
+## Features
+
+Displaying symbols for off-screen match.
+
+![sample](https://github.com/tar80/matchwith.nvim/assets/45842304/82b5a284-f4bc-4c07-838f-dcf77f5bf941)
+
+## Requirements
+
+- Neovim >= 0.10.0-dev-3135
+
+## Installation
+
+- lazy.nvim
+
+```lua:
+{
+  'tar80/matchwith.nvim',
+  opts = {
+    ...
+  },
+}
+```
+
+## Configuration
+
+```lua
+require('matchwith.config').setup({
+    debounce_time = 100,
+    ignore_filetypes = { 'TelescopePrompt', 'cmp-menu' },
+    ignore_buftypes = {},
+    jump_key = '%',
+    indicator = 0,
+    sign = false,
+    captures = { 'keyword.function', 'keyword.repeat', 'keyword.conditional', 'punctuation.bracket' },
+    symbols = { [1] = '↑', [2] = '↓', [3] = '→', [4] = '↗', [5] = '↘', [6] = '←', [7] = '↖', [8] = '↙' },
+})
+```

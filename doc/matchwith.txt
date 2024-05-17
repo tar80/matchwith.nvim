@@ -35,11 +35,10 @@ setup({options})                                      *matchwith.config.setup()*
               {debounce_time}     (integer):  |matchwith-debounce|
               {ignore_filetypes}  (boolean):  |matchwith-filetype|
               {ignore_buftypes}   (boolean):  |matchwith-buftype|
-              {highlights}        (table):    |matchwith-highlight|
               {captures}          (table):    |matchwith-capture|
               {jump_key}          (string):   |matchwith-jumpkey|
               {indicator}         (integer):  |matchwith-indicator|
-
+              {sign}              (boolean):  |matchwith-sign|
 
 ------------------------------------------------------------------------------
 CONFIGURATION                                          *matchwith-configuration*
@@ -64,29 +63,6 @@ Buftypes that do not perform matchwith
             Type: `table`
             Default: { "nofile" }
 
-highlights                                                 *matchwith-highlight*
-Highlights applied to matchpair
-
-            Type: `table
-            Default: {
-                Matchwith = {
-                    fg = `MatchParen`,
-                    bg = `Normal`,
-                    underline = true
-                },
-                MatchwithOut = {
-                    fg = `Error`,
-                    bg = `Normal`,
-                    underline = true
-                },
-                NormalFloat(optional) = {
-                    fg = `Normal`,
-                    bg = `Normal`,
-                    reverse = true
-                }
-            }
-
-
 captures                                                     *matchwith-capture*
 Captures to apply matchwith to
 
@@ -105,12 +81,18 @@ Key to move cursor to the matched pair position
             Default: nil
 
 indicator                                                  *matchwith-indicator*
-Number of milliseconds to display indicator on marker
+If match is off-screen. Number of milliseconds to display indicator on marker
 For example, if the cursor has a box shape, the highlight of the bracket under
 the cursor is unknown, so an indicator is displayed.
 
             Type: `integer`
             Defalut: 0
+
+sign                                                            *matchwith-sign*
+If match is off-screen. Display a symbol in signcolumn
+
+            Type: boolean
+            Dfault: false
 
 ------------------------------------------------------------------------------
 HLGROUP                                                      *matchwith-hlgroup*
