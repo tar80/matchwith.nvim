@@ -39,10 +39,11 @@ util.autocmd('BufEnter', {
   desc = 'Matchwith ignore buftypes',
   group = augroup,
   callback = function()
-    if vim.b.matchwith_disable or vim.bo.buftype == '' then
+    if vim.b.matchwith_disable or (vim.bo.buftype ~= '') then
       return
     end
     vim.b.matchwith_disable = vim.tbl_contains(vim.g.matchwith_ignore_buftypes, vim.bo.buftype)
+    require('matchwith').clear_userdef()
   end,
 })
 
@@ -61,6 +62,15 @@ util.autocmd({ 'InsertEnter', 'InsertLeave' }, {
   group = augroup,
   callback = function()
     require('matchwith').matching()
+  end,
+})
+
+util.autocmd({ 'OptionSet' }, {
+  desc = 'Reset matchwith userdef',
+  group = augroup,
+  pattern = { 'matchpairs' },
+  callback = function()
+    require('matchwith').set_userdef()
   end,
 })
 

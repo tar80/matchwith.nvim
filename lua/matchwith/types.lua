@@ -2,9 +2,10 @@
 ---@alias HlKeys 'on'|'off'|'sign'
 -- WordRange details 1:`row`, 2:`start_row`, 3:`end_row`
 ---@alias WordRange {[1]:integer,[2]:integer,[3]:integer}
----@alias MatchItem {node:TSNode,range:Range4}
+---@alias MatchItem {node:TSNode,range:Range4,is_start?:boolean}
 ---@alias Last {row:integer|vim.NIL,state:LastState,line:Range4[]}
 ---@alias LastState {[1]:Range4,[2]:Range4}
+---@alias UserDefined {chars:string[],matchpair:table<string,string[]>}
 
 ---@class Options
 ---@field public debounce_time? integer
@@ -21,6 +22,7 @@
 ---@field private marker_range integer[]
 ---@field private skip_matching boolean
 ---@field private changetick integer
+---@field private userdef UserDefined
 
 ---@class Instance
 ---@field public mode string
@@ -44,10 +46,13 @@
 ---@field get_matches fun(self:self):MatchItem?,Range4[],Range4[]
 ---@field pair_marker_state fun(self:self,is_start:boolean,pair:WordRange):string,string|nil
 ---@field get_matchpair fun(self:self,match:MatchItem,ranges:Range4[]):boolean, Range4|vim.NIL,integer[]
+---@field set_userdef fun():nil
+---@field clear_userdef fun():nil
+---@field user_matchpair fun(self:self,match:MatchItem?,line:Range4[]):MatchItem?,Last
 ---@field draw_markers fun(self:self,is_start:boolean,match:Range4,pair:Range4):LastState
 ---@field add_marker fun(self:self,group:Hlgroup,word_range:WordRange)
 ---@field set_indicator fun(self:self,symbol:string|nil)
----@field matching fun(row?:integer,col?:integer)
+---@field matching fun(row?:integer,col?:integer):boolean?
 ---@field jumping fun(self:self)
 ---@field setup fun(opts:Matchwith)
 

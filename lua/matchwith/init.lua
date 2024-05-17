@@ -1,5 +1,6 @@
 ---@module 'util'
 local util = require('matchwith.util')
+-- local util = package.loaded['fret.util'] or require('matchwith.util')
 local api = vim.api
 local fn = vim.fn
 local ts = vim.treesitter
@@ -93,7 +94,7 @@ function matchwith.get_matches(self)
     end
     local lang = ltree:lang()
     local queries = tsq.get(lang, 'highlights')
-    if not queries then
+    if not queries or lang == 'markdown' then
       return
     end
     local iter = queries:iter_matches(tsroot, self.bufnr, self.cur_row, self.cur_row + 1, { all = true })
@@ -209,6 +210,61 @@ function matchwith.get_matchpair(self, match, ranges)
   return is_start, pair_range, marker_range
 end
 
+---Set user-defined matchpairs
+function matchwith.set_userdef()
+  local chars, matchpair = {}, {}
+  vim.tbl_map(function(v)
+    ---@type string,string
+    local s, e = unpack(vim.split(v, ':', { plain = true }))
+    local s_ = s == '[' and '\\[' or s
+    local e_ = e == ']' and '\\]' or e
+    matchpair[s] = { s_, '', e_, 'nW' }
+    matchpair[e] = { s_, '', e_, 'bnW' }
+    vim.list_extend(chars, { e, s })
+  end, vim.split(vim.bo.matchpairs, ',', { plain = true }))
+  cache.userdef = { chars = chars, matchpair = matchpair }
+end
+
+function matchwith.clear_userdef()
+  cache.userdef = nil
+end
+
+---Check user-defined matchpairs
+function matchwith.user_matchpair(self, match, line)
+  local state = {}
+  if not match then
+    local line_str = vim.api.nvim_get_current_line()
+    local charidx = vim.str_utfindex(line_str, self.cur_col)
+    local char = vim.fn.strcharpart(line_str, charidx, 1)
+    local search_opts = cache.userdef.matchpair[char]
+    if search_opts then
+      local pos = fn.searchpairpos(unpack(search_opts))
+      if (pos[1] + pos[2]) ~= 0 then
+        local row, col = util.zerobase(pos[1]), util.zerobase(pos[2])
+        match = {
+          range = { self.cur_row, self.cur_col, self.cur_row, self.cur_col + 1 },
+          is_start = search_opts[4] == 'nW',
+        }
+        local pair = { row, col, row, col + 1 }
+        state = { match.range, pair }
+      end
+    else
+      local s = self.cur_col + 2
+      local e = line[1] and (line[1][4] - 1) or #line_str
+      if (e - s) > 0 then
+        line_str = line_str:sub(s, e)
+        local iter = vim.iter(cache.userdef.chars)
+        if iter:find(function(v)
+          return line_str:find(v, 1, true)
+        end) then
+          line = {}
+        end
+      end
+    end
+  end
+  return match, { row = self.cur_row, state = state, line = line }
+end
+
 function matchwith.draw_markers(self, is_start, match, pair)
   local word_range = _convert_range(match)
   local pair_range = _convert_range(pair)
@@ -233,7 +289,8 @@ function matchwith.set_indicator(self, symbol)
     if self.opt.sign then
       local opts = { sign_hl_group = matchwith.hlgroups.sign, sign_text = symbol, priority = 0 }
       util.ext_sign(self.ns, self.cur_row, self.cur_col, opts)
-    elseif self.opt.indicator > 0 then
+    end
+    if self.opt.indicator > 0 then
       util.indicator(self.ns, symbol, self.opt.indicator, self.cur_row, self.cur_col)
     end
   end
@@ -250,7 +307,7 @@ function matchwith.matching(row, col)
   end
 
   local session = matchwith.new(row, col)
-  if session.filetype == '' or vim.tbl_contains(session.opt.ignore_filetypes, session.filetype) then
+  if vim.tbl_contains(session.opt.ignore_filetypes, session.filetype) then
     return
   end
   if (session.cur_row == cache.last.row) and (session.changetick == cache.changetick) then
@@ -261,7 +318,6 @@ function matchwith.matching(row, col)
     then
       return
     end
-    cache.last.state = {}
   else
     cache.changetick = session.changetick
   end
@@ -269,28 +325,37 @@ function matchwith.matching(row, col)
   if clear_marker then
     cache.marker_range = {}
   end
+  if not cache.userdef then
+    matchwith.set_userdef()
+  end
   local match, ranges, line = session:get_matches()
-  cache.last.line = line
+  match, cache.last = session:user_matchpair(match, line)
   if not match then
-    cache.last.row = session.cur_row
-    cache.last.state = {}
     return
   end
-  if vim.tbl_isempty(ranges) then
-    cache.last = { row = session.cur_row, state = {}, ranges = {} }
+  if match.is_start ~= nil then
+    cache.marker_range = { session.cur_row, cache.last.state[2][1] + 1 }
+    session:draw_markers(match.is_start, unpack(cache.last.state))
     return
   end
+  --TODO: errors for "else" must be addressed
+  -- if #ranges < 2 then
+  --   return
+  -- end
+
   local is_start, pair_range, marker_range = session:get_matchpair(match, ranges)
   if pair_range ~= vim.NIL then
     ---@cast pair_range -vim.NIL
     cache.marker_range = marker_range
-    cache.last.row = session.cur_row
     if row and col then
       cache.last.state = { match.range, pair_range }
     else
       cache.last.state = session:draw_markers(is_start, match.range, pair_range)
     end
+  else
+    cache.last.state = {}
   end
+  return true
 end
 
 function matchwith.jumping()
@@ -305,11 +370,16 @@ function matchwith.jumping()
       return
     end
     local pos = api.nvim_win_get_cursor(0)
+    ---@type boolean?
+    local ok
     for _, range in ipairs(cache.last.line) do
       if (range[1] + 1) == pos[1] and (range[2] > pos[2]) then
-        matchwith.matching(range[1], range[2])
+        ok = matchwith.matching(range[1], range[2])
         break
       end
+    end
+    if not ok then
+      return
     end
   end
   cache.skip_matching = true

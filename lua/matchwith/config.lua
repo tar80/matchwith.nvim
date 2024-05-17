@@ -44,9 +44,9 @@ function M.set_options(opts)
   end
   if opts.sign then
     local name = matchwith.hlgroups.sign
-    local fg = vim.api.nvim_get_hl(0, { name = matchwith.hlgroups.off }).fg
-    local value = { default = true, fg = fg, bold = true }
-    vim.api.nvim_set_hl(0, name, value)
+    local hl_detail = vim.api.nvim_get_hl(0, { name = matchwith.hlgroups.off })
+    hl_detail = vim.tbl_extend('force', hl_detail, { default = true})
+    vim.api.nvim_set_hl(0, name, hl_detail)
     vim.g.matchwith_sign = opts.sign
   end
   if opts.symbols then
