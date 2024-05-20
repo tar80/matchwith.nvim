@@ -11,7 +11,7 @@ Displaying symbols for off-screen match.
 
 ## Requirements
 
-- Neovim >= 0.10.0-dev-3135
+- Neovim >= 0.10.0
 
 ## Installation
 

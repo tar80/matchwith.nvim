@@ -1,6 +1,5 @@
 ---@module 'util'
-local util = require('matchwith.util')
--- local util = package.loaded['fret.util'] or require('matchwith.util')
+local util = package.loaded['fret.util'] or require('matchwith.util')
 local api = vim.api
 local fn = vim.fn
 local ts = vim.treesitter
@@ -386,7 +385,7 @@ function matchwith.jumping()
   local row, scol = unpack(cache.last.state[2])
   api.nvim_win_set_cursor(0, { row + 1, scol })
   local session = matchwith.new(row, scol)
-  local is_start = cache.last.state[1][1] >= cache.last.state[2][1]
+  local is_start = cache.last.state[1][1] < cache.last.state[2][1]
   session:clear_ns()
   session:draw_markers(is_start, cache.last.state[2], cache.last.state[1])
   cache.last.state = { [1] = cache.last.state[2], [2] = cache.last.state[1] }
