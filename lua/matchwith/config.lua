@@ -22,10 +22,10 @@ function M.set_options(opts)
     vim.g.matchwith_debounce_time = opts.debounce_time
   end
   if opts.ignore_filetypes then
-    vim.list_extend(vim.g.matchwith_ignore_filetypes, opts.ignore_filetypes)
+    vim.g.matchwith_ignore_filetypes = vim.list_extend(vim.g.matchwith_ignore_filetypes, opts.ignore_filetypes)
   end
   if opts.ignore_buftypes then
-    vim.list_extend(vim.g.matchwith_ignore_buftypes, opts.ignore_buftypes)
+    vim.g.matchwith_ignore_buftypes = vim.list_extend(vim.g.matchwith_ignore_buftypes, opts.ignore_buftypes)
   end
   if opts.captures then
     vim.list_extend(vim.g.matchwith_captures, opts.captures)
@@ -45,7 +45,7 @@ function M.set_options(opts)
   if opts.sign then
     local name = matchwith.hlgroups.sign
     local hl_detail = vim.api.nvim_get_hl(0, { name = matchwith.hlgroups.off })
-    hl_detail = vim.tbl_extend('force', hl_detail, { default = true})
+    hl_detail = vim.tbl_extend('force', hl_detail, { default = true })
     vim.api.nvim_set_hl(0, name, hl_detail)
     vim.g.matchwith_sign = opts.sign
   end
