@@ -15,7 +15,7 @@ local hl_detail = {
   [HLGROUP.off] = { default = true, fg = vim.api.nvim_get_hl(0, { name = 'Error' }).fg, bg = 'NONE' },
 }
 
-local util = require('fret.util')
+local util = package.loaded['fret.util'] or require('matchwith.util')
 local timer = util.set_timer()
 local augroup = vim.api.nvim_create_augroup(UNIQ_ID, { clear = true })
 
