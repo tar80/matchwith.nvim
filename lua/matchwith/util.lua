@@ -63,17 +63,23 @@ function M.is_operator(mode)
 end
 
 -- Add element to list. If there is no key in the list, create a new key
----@param tbl table
----@param key string|integer
----@param value any
-function M.tbl_insert(tbl, key, value)
+---@param ... table, string|integer, integer?, any
+function M.tbl_insert(...)
+  local args = {...}
+  local tbl, key, pos, value
+  if #args ~= 4 then
+    local idx = args[1][args[2]] and vim.tbl_count(args[1][args[2]]) + 1 or 1
+    table.insert(args, 3, idx)
+  end
+  ---@cast args[3] integer
+  tbl, key, pos, value = unpack(args)
   if type(tbl) ~= 'table' then
     tbl = {}
   end
   if not tbl[key] then
     tbl[key] = {}
   end
-  vim.list_extend(tbl[key], { value })
+  table.insert(tbl[key], pos, value)
 end
 
 ---@param name string|string[]

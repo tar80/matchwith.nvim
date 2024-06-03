@@ -21,6 +21,11 @@ matchwith.ns = api.nvim_create_namespace(UNIQ_ID)
 matchwith.hlgroups = _G.Matchwith_hlgroup
 _G.Matchwith_hlgroup = nil
 
+-- util module hub
+function matchwith.util_call()
+  return util
+end
+
 -- Adjust column for insert-mode
 ---@package
 ---@param mode string

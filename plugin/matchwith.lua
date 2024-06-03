@@ -15,10 +15,6 @@ local hl_detail = {
   [HLGROUP.off] = { default = true, fg = vim.api.nvim_get_hl(0, { name = 'Error' }).fg, bg = 'NONE' },
 }
 
-local util = package.loaded['fret.util'] or require('matchwith.util')
-local timer = util.set_timer()
-local augroup = vim.api.nvim_create_augroup(UNIQ_ID, { clear = true })
-
 _G.Matchwith_hlgroup = HLGROUP
 vim.g.matchwith_debounce_time = 100
 vim.g.matchwith_indicator = 0
@@ -28,6 +24,12 @@ vim.g.matchwith_ignore_buftypes = { 'nofile' }
 vim.g.matchwith_captures = { 'keyword.function', 'keyword.repeat', 'keyword.conditional', 'punctuation.bracket' }
 vim.g.matchwith_symbols =
   { [1] = '↑', [2] = '↓', [3] = '→', [4] = '↗', [5] = '↘', [6] = '←', [7] = '↖', [8] = '↙' }
+
+-- local util = package.loaded['fret.util'] or require('matchwith.util')
+local matchwith = require('matchwith')
+local util = matchwith.util_call()
+local timer = util.set_timer()
+local augroup = vim.api.nvim_create_augroup(UNIQ_ID, { clear = true })
 
 local function set_hl()
   for name, value in pairs(hl_detail) do
@@ -43,7 +45,7 @@ util.autocmd('BufEnter', {
       return
     end
     vim.b.matchwith_disable = vim.tbl_contains(vim.g.matchwith_ignore_buftypes, vim.bo.buftype)
-    require('matchwith').clear_userdef()
+    matchwith.clear_userdef()
   end,
 })
 
@@ -52,7 +54,7 @@ util.autocmd({ 'CursorMoved', 'CursorMovedI' }, {
   group = augroup,
   callback = function()
     timer.debounce(vim.g.matchwith_debounce_time, function()
-      require('matchwith').matching()
+      matchwith.matching()
     end)
   end,
 })
@@ -61,7 +63,7 @@ util.autocmd({ 'InsertEnter', 'InsertLeave' }, {
   desc = 'Update matchpair highlight',
   group = augroup,
   callback = function()
-    require('matchwith').matching()
+    matchwith.matching()
   end,
 })
 
@@ -70,7 +72,7 @@ util.autocmd({ 'OptionSet' }, {
   group = augroup,
   pattern = { 'matchpairs' },
   callback = function()
-    require('matchwith').set_userdef()
+    matchwith.set_userdef()
   end,
 })
 
