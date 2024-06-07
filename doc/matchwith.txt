@@ -1,4 +1,4 @@
-matchwith.txt*  Simple matchparen and matchit. With Treesitter
+*matchwith.txt*  Simple matchparen and matchit. With Treesitter
 
 Author: tar80 (https://github.com/tar80)
 License: Apache License
@@ -55,7 +55,7 @@ ignore_filetypes                                            *matchwith-filetype*
 Filetypes that do not perform matchwith
 
             Type: `table`
-            Default: { "help" }
+            Default: { "vimdoc" }
 
 ignore_buftypes                                              *matchwith-buftype*
 Buftypes that do not perform matchwith
@@ -92,7 +92,7 @@ sign                                                            *matchwith-sign*
 If match is off-screen. Display a symbol in signcolumn
 
             Type: boolean
-            Dfault: false
+            Default: false
 
 ------------------------------------------------------------------------------
 HLGROUP                                                      *matchwith-hlgroup*
@@ -104,6 +104,10 @@ HLGROUP                                                      *matchwith-hlgroup*
 *MatchwithOut*
 
         Used when a matched pair is off-screen
+
+*MatchwithSign*
+
+        Used for symbols displayed in signcolumn
 
 ==============================================================================
 vim:tw=78:sw=4:ts=8:ft=help:norl:noet:

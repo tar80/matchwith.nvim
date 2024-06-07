@@ -17,8 +17,11 @@ end
 
 ---@param name string
 ---@param subject string
----@param msg table<string,string>[]
+---@param msg string|string[][]
 function M.echo(name, subject, msg)
+  if type(msg) == 'string' then
+    msg = { { msg } }
+  end
   api.nvim_echo({ { string.format('[%s] %s: ', name, subject) }, unpack(msg) }, false, {})
 end
 
@@ -46,11 +49,11 @@ function M.expand_wrap_symbols()
   return extends, precedes
 end
 
--- Insert-mode or not
+-- Determine whether the specified string is in insert-mode.
 ---@parame mode string
 ---@return boolean
 function M.is_insert_mode(mode)
-  return (mode == 'i' or mode == 'R')
+  return mode:find('^[i|R]') ~= nil
 end
 
 -- Operator-pending or not
@@ -63,16 +66,18 @@ function M.is_operator(mode)
 end
 
 -- Add element to list. If there is no key in the list, create a new key
----@param ... table, string|integer, integer?, any
-function M.tbl_insert(...)
-  local args = {...}
-  local tbl, key, pos, value
-  if #args ~= 4 then
-    local idx = args[1][args[2]] and vim.tbl_count(args[1][args[2]]) + 1 or 1
-    table.insert(args, 3, idx)
+---@param tbl table
+---@param key string|integer
+---@param ... any
+function M.tbl_insert(tbl, key, ...)
+  local args = { ... }
+  local pos, value
+  if #args < 2 then
+    local idx = tbl[key] and vim.tbl_count(tbl[key]) + 1 or 1
+    table.insert(args, 1, idx)
   end
-  ---@cast args[3] integer
-  tbl, key, pos, value = unpack(args)
+  ---@cast args[1] integer
+  pos, value = unpack(args)
   if type(tbl) ~= 'table' then
     tbl = {}
   end
@@ -104,6 +109,7 @@ end
 ---@field public debounce fun(timeout:integer,callback:fun()): nil
 ---@field public stop fun(): nil
 ---@field public close fun(): nil
+---@field public _closing fun(): boolean
 
 ---@return Timer
 function M.set_timer()
@@ -134,6 +140,9 @@ function M.set_timer()
           timer:close()
         end
       end,
+      _closing = function ()
+        return timer:is_closing()
+      end
     },
   })
 end
@@ -154,6 +163,7 @@ local float_options = {
 ---@param timeout integer
 ---@param row integer
 ---@param col integer
+---@return integer window_handle
 function M.indicator(ns, text, timeout, row, col)
   local bufnr = api.nvim_create_buf(false, true)
   local opts = vim.tbl_extend('force', float_options, {
@@ -168,6 +178,7 @@ function M.indicator(ns, text, timeout, row, col)
   vim.defer_fn(function()
     api.nvim_win_close(winid, true)
   end, timeout)
+  return winid
 end
 
 -- Show indicator on signcolumn
