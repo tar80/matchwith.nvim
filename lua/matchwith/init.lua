@@ -73,8 +73,8 @@ end
 function matchwith.clear_ns(self)
   local clear = false
   if not vim.tbl_isempty(cache.marker_range) then
-    api.nvim_buf_clear_namespace(0, self.ns, cache.marker_range[1], cache.marker_range[2])
-    -- api.nvim_buf_clear_namespace(0, self.ns, 0, -1)
+    -- api.nvim_buf_clear_namespace(0, self.ns, cache.marker_range[1], cache.marker_range[2])
+    api.nvim_buf_clear_namespace(0, self.ns, 0, -1)
     clear = true
   end
   return clear
