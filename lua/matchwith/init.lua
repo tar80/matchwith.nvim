@@ -386,6 +386,10 @@ function matchwith.jumping()
       return
     end
   end
+  ---TODO:Need to fix a bug that is causing the switch_statement to not correctly get the range it returns.
+  if vim.tbl_isempty(cache.last.state) then
+    return
+  end
   cache.skip_matching = true
   local row, scol = unpack(cache.last.state[2])
   api.nvim_win_set_cursor(0, { row + 1, scol })
