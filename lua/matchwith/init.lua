@@ -84,9 +84,19 @@ end
 function matchwith.get_matches(self)
   ---@type MatchItem?, Range4[], Range4[]
   local match, ranges, line = nil, {}, {}
-  local ok, lang_tree = pcall(ts.get_parser, self.bufnr, self.filetype)
-  if not ok or not lang_tree then
-    return match, ranges, line
+  -- TODO: Should handle get_parser return value change in neovim 12.
+  ---@type boolean, vim.treesitter.LanguageTree?
+  local ok, lang_tree
+  if ts._get_parser then
+    lang_tree = ts._get_parser(self.bufnr, self.filetype)
+    if not lang_tree then
+      return match, ranges, line
+    end
+  else
+    ok, lang_tree = pcall(ts.get_parser, self.bufnr, self.filetype)
+    if not ok or not lang_tree then
+      return match, ranges, line
+    end
   end
   ---@type integer
   local ptn
