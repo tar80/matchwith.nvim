@@ -248,9 +248,12 @@ function matchwith.user_matchpair(self, match, line)
   local state = {}
   if not match then
     local line_str = vim.api.nvim_get_current_line()
-    local charidx = vim.str_utfindex(line_str, self.cur_col)
-    local char = vim.fn.strcharpart(line_str, charidx, 1)
-    local search_opts = cache.userdef.matchpair[char]
+    local search_opts
+    if vim.fn.type(line_str) ~= 10 then
+      local charidx = vim.str_utfindex(line_str, self.cur_col)
+      local char = vim.fn.strcharpart(line_str, charidx, 1)
+      search_opts = cache.userdef.matchpair[char]
+    end
     if search_opts then
       local pos = fn.searchpairpos(unpack(search_opts))
       if (pos[1] + pos[2]) ~= 0 then
