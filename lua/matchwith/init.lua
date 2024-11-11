@@ -1,5 +1,10 @@
 ---@module 'util'
-local util = package.loaded['fret.util'] or require('matchwith.util')
+local util = setmetatable({}, {
+  __index = function(t, k)
+    t = package.loaded['fret.util'] or require('matchwith.util')
+    return t[k]
+  end,
+})
 local api = vim.api
 local fn = vim.fn
 local ts = vim.treesitter
