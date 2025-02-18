@@ -1,7 +1,7 @@
 ---@module 'util'
 local util = setmetatable({}, {
     __index = function(t, k)
-        t = package.loaded['fret.util'] or require 'matchwith.util'
+        t = package.loaded['fret.util'] or require('matchwith.util')
         return t[k]
     end,
 })
@@ -61,8 +61,8 @@ function matchwith.new(row, col)
     self['changetick'] = api.nvim_buf_get_changedtick(self.bufnr)
     local pos = api.nvim_win_get_cursor(self.winid)
     -- adjust row to zero-base
-    self['top_row'] = util.zerobase(fn.line 'w0')
-    self['bottom_row'] = util.zerobase(fn.line 'w$')
+    self['top_row'] = util.zerobase(fn.line('w0'))
+    self['bottom_row'] = util.zerobase(fn.line('w$'))
     self['cur_row'] = row or util.zerobase(pos[1])
     self['cur_col'] = col or _adjust_col(self.mode, pos[2])
     self['opt'] = {
@@ -232,7 +232,7 @@ end
 
 -- Get pair range
 function matchwith.get_matchpair(self, match, ranges)
-    local node = match.node
+    local node = assert(match.node)
     local node_range = { node:range() }
     local is_start = _is_start_point(self.cur_row, match.range, node_range)
     -- Query.iter_matches may not be able to get the bracket range, so we need to add it
@@ -459,7 +459,7 @@ function matchwith.jumping()
     end
     if vim.tbl_isempty(cache.last.state) then
         if vim.tbl_isempty(cache.last.line) then
-            vim.cmd 'normal! %'
+            vim.cmd('normal! %')
             return
         end
         local pos = api.nvim_win_get_cursor(0)
