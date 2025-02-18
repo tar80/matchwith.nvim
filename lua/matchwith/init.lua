@@ -347,7 +347,9 @@ function matchwith.draw_markers(self, is_start, match, pair, capture)
 end
 
 function matchwith.add_marker(self, hlgroup, word_range)
-    api.nvim_buf_add_highlight(self.bufnr, self.ns, hlgroup, unpack(word_range))
+    local start = { word_range[1], word_range[2] }
+    local finish = { word_range[1], word_range[3] }
+    vim.hl.range(self.bufnr, self.ns, hlgroup, start, finish)
 end
 
 function matchwith.set_indicator(self, symbol)
