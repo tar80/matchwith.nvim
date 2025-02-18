@@ -51,7 +51,7 @@
 ---@field user_matchpair fun(self:self,match:MatchItem?,line:Range4[]):MatchItem?,Last
 ---@field draw_markers fun(self:self,is_start:boolean,match:Range4,pair:Range4,capture?:string):LastState
 ---@field add_marker fun(self:self,group:Hlgroup,word_range:WordRange)
----@field set_indicator fun(self:self,symbol:string|nil)
+---@field set_indicator fun(self:self,symbol:string?)
 ---@field matching fun(row?:integer,col?:integer):boolean?
 ---@field jumping fun(self:self)
 ---@field setup fun(opts:Matchwith)

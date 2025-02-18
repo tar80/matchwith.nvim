@@ -331,7 +331,8 @@ function matchwith.draw_markers(self, is_start, match, pair, capture)
     local pair_range = _convert_range(pair)
     local is_insert = util.is_insert_mode(self.mode)
     local num = self:pair_marker_state(is_start, pair_range)
-    local on_or_off = is_pair_off_screen(num) and 'off' or 'on'
+    local pair_off_screen = is_pair_off_screen(num)
+    local on_or_off = pair_off_screen and 'off' or 'on'
     local hlgroup = self.hlgroups[on_or_off]
     if not capture or capture == 'punctuation.bracket' then
         hlgroup = 'MatchParen' -- no associated capture (matchpairs) or bracket (TS)
@@ -339,7 +340,7 @@ function matchwith.draw_markers(self, is_start, match, pair, capture)
     self:add_marker(hlgroup, word_range)
     self:add_marker(hlgroup, pair_range)
     if not is_insert and (fn.foldclosed(self.cur_row + 1) == -1) then
-        if hlgroup == self.hlgroups.off then
+        if pair_off_screen then
             self:set_indicator(self.opt.symbols[num])
         end
     end
