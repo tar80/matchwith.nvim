@@ -44,7 +44,7 @@
 ---@field new fun(row?:integer,col?:integer):Matchwith
 ---@field clear_ns fun(self:self):boolean
 ---@field get_matches fun(self:self):MatchItem?,Range4[],Range4[]
----@field pair_marker_state fun(self:self,match:MatchItem,pair:WordRange):integer
+---@field pair_marker_state fun(self:self,is_start:boolean,pair:WordRange):integer
 ---@field get_matchpair fun(self:self,match:MatchItem,ranges:Range4[]):boolean, Range4|vim.NIL,integer[]
 ---@field set_userdef fun():nil
 ---@field clear_userdef fun():nil

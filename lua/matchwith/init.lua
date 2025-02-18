@@ -174,7 +174,7 @@ local function _is_start_point(cur_row, current, parent)
 end
 
 -- Whether the pair's position is on-screen or off-screen
-function matchwith.pair_marker_state(self, match, pair)
+function matchwith.pair_marker_state(self, is_start, pair)
     local pair_row, pair_scol, pair_ecol = unpack(pair)
     local leftcol = fn.winsaveview().leftcol
     local wincol = fn.wincol()
@@ -193,7 +193,7 @@ function matchwith.pair_marker_state(self, match, pair)
         num = 6
     end
     local is_over = (num > 0) and (self.cur_row ~= pair_row)
-    if match.is_start then
+    if is_start then
         if is_over or (pair_row < self.top_row) then
             num = num + 1
         end
@@ -330,11 +330,11 @@ function matchwith.draw_markers(self, is_start, match, pair, capture)
     local word_range = _convert_range(match)
     local pair_range = _convert_range(pair)
     local is_insert = util.is_insert_mode(self.mode)
-    local num = self:pair_marker_state(match, pair_range)
+    local num = self:pair_marker_state(is_start, pair_range)
     local on_or_off = is_pair_off_screen(num) and 'off' or 'on'
-    local hlgroup = self.hlgroups[on_or_off] 
-    if not capture or capture == 'punctuation.bracket'  then
-      hlgroup = 'MatchParen' -- no associated capture (matchpairs) or bracket (TS)
+    local hlgroup = self.hlgroups[on_or_off]
+    if not capture or capture == 'punctuation.bracket' then
+        hlgroup = 'MatchParen' -- no associated capture (matchpairs) or bracket (TS)
     end
     self:add_marker(hlgroup, word_range)
     self:add_marker(hlgroup, pair_range)
@@ -427,7 +427,8 @@ function matchwith.matching(row, col)
     --   return
     -- end
 
-    local is_start, pair_range, marker_range = session:get_matchpair(match, ranges)
+    local is_start, pair_range, marker_range =
+        session:get_matchpair(match, ranges)
     if pair_range ~= vim.NIL then
         ---@cast pair_range -vim.NIL
         cache.marker_range = marker_range
