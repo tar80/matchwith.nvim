@@ -9,9 +9,8 @@ local M = {}
 ---@param name string
 ---@param message string
 ---@param errorlevel integer
----@param options? table
-function M.notify(name, message, errorlevel, options)
-  options = options or {}
+function M.notify(name, message, errorlevel)
+  options = { title = name }
   vim.notify(string.format('[%s] %s', name, message), errorlevel, options)
 end
 
@@ -40,9 +39,9 @@ function M.charwidth(string, column)
   return api.nvim_strwidth(fn.strcharpart(string, column, 1))
 end
 
--- Expand wrapping symbols
+-- Expand listchar symbols
 ---@return integer extends,integer precedes
-function M.expand_wrap_symbols()
+function M.expand_listchars()
   local listchars = vim.opt.listchars:get()
   local extends = listchars.extends and 1 or 0
   local precedes = listchars.precedes and 1 or 0
@@ -222,9 +221,11 @@ end
 -- Flash pair marker
 ---@param ns integer
 ---@param hl string Highlight name
----@param blend integer Initial value of winblend
----@param decay integer winblend becay
+---@param blend? integer Initial value of winblend
+---@param decay? integer winblend becay
 function M.beacon(ns, hl, blend, decay)
+  blend = blend or 0
+  decay = decay or 10
   vim.defer_fn(function()
     local line = api.nvim_get_current_line()
     local _, col = unpack(api.nvim_win_get_cursor(0))
@@ -233,14 +234,13 @@ function M.beacon(ns, hl, blend, decay)
     local next_charwidth = math.min(2, #vim.fn.strcharpart(line, charidx + 1, 1, true))
     local width = next_charwidth == 0 and charwidth * 3 or charwidth * 2 + next_charwidth
     local opts = vim.tbl_extend('force', float_options, {
-      width = width,
+      width = math.max(1, width),
       row = vim.fn.winline() - 1,
       col = vim.fn.wincol() - 1 - charwidth,
     })
     local bufnr = api.nvim_create_buf(false, true)
     local winid = api.nvim_open_win(bufnr, false, opts)
-    api.nvim_win_set_hl_ns(winid, ns)
-    vim.wo[winid].winhl = ('Normal:%s'):format(hl)
+    api.nvim_set_option_value('winhighlight', ('Normal:%s'):format(hl), { win = winid })
     api.nvim_set_option_value('winblend', blend, { win = winid })
     local timer = M.set_timer()
     timer.flash(80, winid, blend, decay)

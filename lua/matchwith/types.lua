@@ -1,28 +1,40 @@
----@alias Hlgroup 'Matchwith'|'MatchwithOut'|'MatchwithSign'
----@alias HlKeys 'on'|'off'|'sign'
--- WordRange details 1:`row`, 2:`start_row`, 3:`end_row`
+---@alias Hlgroups 'Matchwith'|'MatchwithOut'|'MatchwithSign'|'MatchwithParent'|'MatchwithParentOut'
+---@alias HlKeys 'ON'|'OFF'|'SIGN'|'PARENT_ON'|'PARENT_OFF'
+-- [1]:Start row, [2]:Start column, [3]:End column
 ---@alias WordRange {[1]:integer,[2]:integer,[3]:integer}
----@alias MatchItem {node:TSNode,range:Range4,is_start?:boolean}
----@alias Last {row:integer|vim.NIL,state:LastState,line:Range4[]}
+---@alias MatchItem {node:TSNode,range:Range4,at_cursor:boolean,is_comment:boolean,is_start_point:IsStartPoint}
+---@alias Last {word:WordRange,current:LastState,parent:LastState}
+-- Node ranges and their paired node ranges retrieved in the last session.
+-- [1]:Markerd range, [2]:Paired range
 ---@alias LastState {[1]:Range4,[2]:Range4}
----@alias UserDefined {chars:string[],matchpair:table<string,string[]>}
+---@alias SearchPairs {chars:string[],matchpair:table<string,string[]>}
+-- The starting line and ending line of the highlight are specified.
+-- The ending line must be incremented by 1 to be included in the range.
+---@alias Markers {current?:Range2,parent?:Range2}
+---@alias IsStartPoint boolean
 
 ---@class Options
 ---@field public debounce_time? integer
+---@field public depth_limit? integer
 ---@field public ignore_filetypes string[]
 ---@field public ignore_buftypes? string[]
 ---@field public captures string[]
 ---@field public jump_key? string
 ---@field public indicator? integer
 ---@field public sign? boolean
+---@field public show_parent? boolean
+---@field public show_next? boolean
 ---@field public symbols table<string,string>
 
 ---@class Cache
----@field private last Last
----@field private marker_range integer[]
----@field private skip_matching boolean
+---@field private ns integer
+---@field private hlgroup {[HlKeys]:Hlgroups}
+---@field private hldetails {[Hlgroups]: vim.api.keyset.highlight}
+---@field private searchpairs SearchPairs
 ---@field private changetick integer
----@field private userdef UserDefined
+---@field private last Last
+---@field private markers Markers
+---@field private skip_matching boolean
 
 ---@class Instance
 ---@field public mode string
@@ -34,27 +46,31 @@
 ---@field public bottom_row integer
 ---@field public cur_row integer
 ---@field public cur_col integer
+---@field public sentence string
 ---@field public opt Options
+---@field public match MatchItem
+---@field public next_match TSNode
+---@field public node_ranges Range4[]
+---@field public markers Markers
+---@field public last Last
 
 ---@class Matchwith: Instance
----@field public ns integer
----@field public augroup integer
----@field public hlgroup {[HlKeys]:Hlgroup}
 ---@field public opt Options
+---@field util_call fun():util
+---@field clear_ns fun(self:self,marker:Range2):boolean
 ---@field new fun(row?:integer,col?:integer):Matchwith
----@field clear_ns fun(self:self):boolean
----@field get_matches fun(self:self):MatchItem?,Range4[],Range4[]
----@field pair_marker_state fun(self:self,is_start:boolean,pair:WordRange):string,string|nil
----@field get_matchpair fun(self:self,match:MatchItem,ranges:Range4[]):boolean, Range4|vim.NIL,integer[]
----@field set_userdef fun():nil
----@field clear_userdef fun():nil
----@field user_matchpair fun(self:self,match:MatchItem?,line:Range4[]):MatchItem?,Last
----@field draw_markers fun(self:self,is_start:boolean,match:Range4,pair:Range4):LastState
----@field add_marker fun(self:self,group:Hlgroup,word_range:WordRange)
+---@field get_matches fun(self:self)
+---@field verify_searchpairpos fun(self:self)
+---@field verify_next_match fun(self:self)
+---@field get_matchpair fun(self:self)
+---@field pair_marker_state fun(self:self,pair:WordRange):integer
+---@field set_matchpairs_list fun():nil
+---@field draw_markers fun(self:self)
+---@field add_marker fun(self:self,group:Hlgroups,word_range:WordRange)
 ---@field set_indicator fun(self:self,symbol:string|nil)
 ---@field matching fun(row?:integer,col?:integer):boolean?
 ---@field jumping fun(self:self)
----@field setup fun(opts:Matchwith)
+---@field setup fun(opts:Options,force:boolean)
 
 ---@class TODO
 ---@field set_matchpairs fun(self:self)
