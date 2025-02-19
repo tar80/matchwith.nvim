@@ -28,12 +28,14 @@ Displaying symbols for off-screen match.
 
 ## Configuration
 
+Setting example(defalut values)
+
 ```lua
 require('matchwith.config').setup({
     debounce_time = 100,
-    ignore_filetypes = { 'TelescopePrompt', 'cmp-menu' },
-    ignore_buftypes = {},
-    jump_key = '%',
+    ignore_filetypes = { 'vimdoc' }, -- Suggested items: 'TelescopePrompt', 'cmp-menu'
+    ignore_buftypes = { 'nofile' },
+    jump_key = nil, -- e.g. '%'
     indicator = 0,
     sign = false,
     captures = { 'keyword.function', 'keyword.repeat', 'keyword.conditional', 'punctuation.bracket' },
