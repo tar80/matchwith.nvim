@@ -1,4 +1,4 @@
-*matchwith.txt*  Simple matchparen and matchit. With Treesitter
+*matchwith.txt*                   Simple matchparen and matchit. With Treesitter
 
 Author: tar80 (https://github.com/tar80)
 License: Apache License
@@ -10,7 +10,7 @@ Interface                                                  |matchwith-interface|
   variable                                                  |matchwith-variable|
   function                                                  |matchwith-function|
   configuration                                        |matchwith-configuration|
-  hlgroup                                                   |matchiwith-hlgroup|
+  hlgroup                                                    |matchwith-hlgroup|
 
 ==============================================================================
 INTERFACE                                                  *matchwith-interface*
@@ -19,10 +19,24 @@ INTERFACE                                                  *matchwith-interface*
 VARIABLES                                                   *matchwith-variable*
 
         g:matchwith_disable                                *g:matchwith_disable*
-                If this value is true, matchwith is globally disabled.
+                If this value is truthy, matchwith is globally disabled.
 
         b:matchwith_disable                                *b:matchwith_disable*
-                If this value is true, matchwith disabled on that buffer.
+                If this value is truthy, matchwith disabled on that buffer.
+
+        g:matchwith_captures                                |matchwith_captures|
+
+        g:matchwith_debounce_time                           |matchwith_debounce|
+
+        g:matchwith_ignore_filetypes                |matchwith_ignore_filetypes|
+
+        g:matchwith_ignore_buftypes                  |matchwith_ignore_buftypes|
+
+        g:matchwith_indicator                              |matchwith_indicator|
+
+        g:matchwith_sign                                        |matchwith_sign|
+
+        g:matchwith_symbols                                  |matchwith_symbols|
 
 ------------------------------------------------------------------------------
 FUNCTION                                                    *matchwith-function*
@@ -71,7 +85,8 @@ Captures to apply matchwith to
                 "keyword.function",
                 "keyword.repeat",
                 "keyword.conditional",
-                "punctuation.bracket"
+                "punctuation.bracket",
+                "constructor"
             }
 
 jump_key                                                     *matchwith-jumpkey*
@@ -83,7 +98,7 @@ Key to move cursor to the matched pair position
 indicator                                                  *matchwith-indicator*
 If match is off-screen. Number of milliseconds to display indicator on marker
 For example, if the cursor has a box shape, the highlight of the bracket under
-the cursor is unknown, so an indicator is displayed.
+the cursor is unknown, so an indicator is displayed
 
             Type: `integer`
             Defalut: 0
