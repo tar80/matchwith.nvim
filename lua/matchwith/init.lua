@@ -516,11 +516,11 @@ function matchwith.setup(opts, force)
   api.nvim_create_autocmd('BufEnter', {
     desc = with_unique_name('%s: update buffer configrations'),
     group = augroup,
-    callback = function(ev)
+    callback = function()
       cache.skip_matching = true
-      if not vim.b[ev.buf].matchwith_disable and (vim.bo[ev.buf].buftype == '') then
-        vim.b[ev.buf].matchwith_disable = vim.tbl_contains(vim.g.matchwith_ignore_buftypes, vim.bo[ev.buf].buftype)
-        if not vim.b[ev.buf].matchwith_disable then
+      if not vim.b.matchwith_disable then
+        vim.b.matchwith_disable = vim.tbl_contains(vim.g.matchwith_ignore_buftypes, vim.bo.buftype)
+        if not vim.b.matchwith_disable then
           matchwith.set_searchpairs()
         end
       end
