@@ -24,90 +24,182 @@ VARIABLES                                                   *matchwith-variable*
         b:matchwith_disable                                *b:matchwith_disable*
                 If this value is truthy, matchwith disabled on that buffer.
 
-        g:matchwith_captures                                |matchwith_captures|
+        g:matchwith_captures                                |matchwith-captures|
 
-        g:matchwith_debounce_time                           |matchwith_debounce|
+        g:matchwith_debounce_time                           |matchwith-debounce|
 
-        g:matchwith_ignore_filetypes                |matchwith_ignore_filetypes|
+        g:matchwith_depth_limit                          |matchwith-depth-limit|
 
-        g:matchwith_ignore_buftypes                  |matchwith_ignore_buftypes|
+        g:matchwith_ignore_filetypes                |matchwith-ignore-filetypes|
 
-        g:matchwith_indicator                              |matchwith_indicator|
+        g:matchwith_ignore_buftypes                  |matchwith-ignore-buftypes|
 
-        g:matchwith_sign                                        |matchwith_sign|
+        g:matchwith_indicator                              |matchwith-indicator|
 
-        g:matchwith_symbols                                  |matchwith_symbols|
+        g:matchwith_off_side                                |matchwith-off-side|
+
+        g:matchwith_priority                                |matchwith-priority|
+
+        g:matchwith_show_next                              |matchwith-show-next|
+
+        g:matchwith_show_parent                          |matchwith-show-parent|
+
+        g:matchwith_sign                                        |matchwith-sign|
+
+        g:matchwith_symbols                                  |matchwith-symbols|
 
 ------------------------------------------------------------------------------
 FUNCTION                                                    *matchwith-function*
 
 setup({options})                                      *matchwith.config.setup()*
 
-        Setup matchwith
+        Setup matchwith.
 
         Parameters: ~
-              {debounce_time}     (integer):  |matchwith-debounce|
-              {ignore_filetypes}  (boolean):  |matchwith-filetype|
-              {ignore_buftypes}   (boolean):  |matchwith-buftype|
-              {captures}          (table):    |matchwith-capture|
-              {jump_key}          (string):   |matchwith-jumpkey|
-              {indicator}         (integer):  |matchwith-indicator|
-              {sign}              (boolean):  |matchwith-sign|
+              {captures}          (table):                  |matchwith-captures|
+              {debounce_time}     (integer):                |matchwith-debounce|
+              {depth_limit}       (integer):             |matchwith-depth-limit|
+              {ignore_filetypes}  (boolean):                |matchwith-filetype|
+              {ignore_buftypes}   (boolean):                 |matchwith-buftype|
+              {indicator}         (integer):               |matchwith-indicator|
+              {jump_key}          (string):                  |matchwith-jumpkey|
+              {off_side}          (table):                  |matchwith-off-side|
+              {priority}          (integer):                |matchwith-priority|
+              {show_next}         (boolean):               |matchwith-show-next|
+              {show_parent}       (boolean):             |matchwith-show_parent|
+              {sign}              (boolean):                    |matchwith-sign|
+              {symbols}           (boolean):                 |matchwith-symbols|
 
 ------------------------------------------------------------------------------
 CONFIGURATION                                          *matchwith-configuration*
 
 Default settings ~
 
+captures                                                    *matchwith-captures*
+
+        Captures to apply matchwith. off-side is a capture group applied to
+        the file type specified by |matchwith-off-side|.
+
+            Type: `table`
+            Default: {
+                ["*"] = {
+                    "keyword.function",
+                    "keyword.repeat",
+                    "keyword.conditional",
+                    "punctuation.bracket",
+                    "constructor"
+                },
+                off_side = {
+                    "punctuation.bracket"
+                }
+            }
+
 debounce_time                                               *matchwith-debounce*
-Wait time before highlighting after cursor movement
+
+        Wait time before highlighting after cursor movement.
 
             Type: `integer`
-            Default: 100
+            Default: 50
+
+depth_limit                                              *matchwith-depth-limit*
+
+        Specifies the maximum start depth for each match of the syntax tree.
+
+            Type: `integer`
+            Default: 10
 
 ignore_filetypes                                            *matchwith-filetype*
-Filetypes that do not perform matchwith
+
+        Filetypes that do not perform matchwith.
 
             Type: `table`
             Default: { "vimdoc" }
 
 ignore_buftypes                                              *matchwith-buftype*
-Buftypes that do not perform matchwith
+
+        Buftypes that do not perform matchwith.
 
             Type: `table`
             Default: { "nofile" }
 
-captures                                                     *matchwith-capture*
-Captures to apply matchwith to
-
-            Type: `table`
-            Default: {
-                "keyword.function",
-                "keyword.repeat",
-                "keyword.conditional",
-                "punctuation.bracket",
-                "constructor"
-            }
-
 jump_key                                                     *matchwith-jumpkey*
-Key to move cursor to the matched pair position
+
+        Key to move cursor to the matched pair position.
 
             Type: `string`
             Default: nil
 
 indicator                                                  *matchwith-indicator*
-If match is off-screen. Number of milliseconds to display indicator on marker
-For example, if the cursor has a box shape, the highlight of the bracket under
-the cursor is unknown, so an indicator is displayed
+
+        If match is off-screen. Number of milliseconds to display indicator on
+        marker. For example, if the cursor has a box shape, the highlight of
+        the bracket under the cursor is unknown, so an indicator is displayed.
 
             Type: `integer`
             Defalut: 0
 
-sign                                                            *matchwith-sign*
-If match is off-screen. Display a symbol in signcolumn
+off_side                                                    *matchwith-off_side*
 
-            Type: boolean
+        Specifies the file types to which off-side rules apply.
+        Specify the capture group within |matchwith-captures|.
+
+            Type: `table`
+            Defalut: {
+                'query',
+                'fsharp',
+                'haskell',
+                'ocaml',
+                'make',
+                'nim',
+                'python',
+                'sass',
+                'scss',
+                'yaml'
+             }
+
+priority                                                    *matchwith-priority*
+
+        Marker and sign priority.
+
+            Type: `integer`
+            Defalut: 100
+
+show_next                                                  *matchwith-show-next*
+
+        Highlight the next capture match.
+
+            Type: `boolean`
             Default: false
+
+show_parent                                              *matchwith-show-parent*
+
+        Highlight the parent node match.
+
+            Type: `boolean`
+            Default: false
+
+sign                                                            *matchwith-sign*
+
+        If match is off-screen. Display a symbol in signcolumn.
+
+            Type: `boolean`
+            Default: false
+
+symbols                                                      *matchwith-symbols*
+
+        Symbols indicate the direction of the off-screen matched pair.
+
+            Type: `table`
+            Default: {
+                [1] = '↑',
+                [2] = '↓',
+                [3] = '→',
+                [4] = '↗',
+                [5] = '↘',
+                [6] = '←',
+                [7] = '↖',
+                [8] = '↙'
+            }
 
 ------------------------------------------------------------------------------
 HLGROUP                                                      *matchwith-hlgroup*
@@ -119,6 +211,22 @@ HLGROUP                                                      *matchwith-hlgroup*
 *MatchwithOut*
 
         Used when a matched pair is off-screen
+
+*MatchwithNext*
+
+        Used for next matchpair
+
+*MatchwithNextOut*
+
+        Used when a next matched pair is off-screen
+
+*MatchwithParent*
+
+        Used for a parent matchpair
+
+*MatchwithParentOut*
+
+        Used when a parant matched pair is off-screen
 
 *MatchwithSign*
 
