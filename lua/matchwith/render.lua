@@ -27,6 +27,9 @@ function M.indicator(ns, text, timeout, row, col)
   local winid = vim.api.nvim_open_win(bufnr, false, opts)
   vim.api.nvim_win_set_hl_ns(winid, ns)
   vim.api.nvim_buf_set_text(bufnr, 0, 0, 0, 0, { text })
+  if vim.fn.has('nvim-0.11') then
+    vim.api.nvim_set_option_value('eventignorewin', 'WinLeave', { win = winid })
+  end
   vim.defer_fn(function()
     vim.api.nvim_win_close(winid, true)
   end, timeout)

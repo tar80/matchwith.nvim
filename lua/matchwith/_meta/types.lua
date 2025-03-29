@@ -1,0 +1,88 @@
+---@meta
+
+---@alias hl {groups: HlGroups, details: {[string]:{fg:string,bg:string}}}
+---@alias hlGroups 'Matchwith'|'MatchwithOut'|'MatchwithNext'|'MatchwithNextOut'|'MatchwithParent'|'MatchwithParentOut'|'MatchwithSign'
+---@alias hlKeys 'ON'|'OFF'|'NEXT_ON'|'NEXT_OFF'|'PARENT_ON'|'PARENT_OFF'|'SIGN'
+---@alias nodeScope 'cur'|'parent'|'next'
+-- [1]:Start row, [2]:Start column, [3]:End column
+---@alias MatchItems {prev_end_col:integer,[nodeScope]:MatchItem}
+---@alias MatchItem {node:TSNode,range:Range4,ancestor_nodes:TSNode[],at_cursor?:boolean}
+---@alias Last {cur?:LastMatch,next?:LastMatch,parent?:LastMatch,range:Range4,scope:nodeScope,is_start_point:boolean}
+-- Node ranges and their paired node ranges retrieved in the last session.
+-- [1]:Markerd range, [2]:Paired range
+---@alias LastMatch {[1]:Range4,[2]:Range4}
+---@alias SearchPairs {chrs:string[],matchpair:table<string,string[]>}
+-- The starting line and ending line of the highlight are specified.
+-- The ending line must be incremented by 1 to be included in the range.
+---[1]:start row, [2]end row
+---@alias Markers {[nodeScope]:{[1]:integer,[2]:integer}}
+---@alias IsStartPoint boolean
+
+---@class Options
+---@field public captures? string[]
+---@field public debounce_time? integer
+---@field public depth_limit? integer
+---@field public ignore_buftypes? string[]
+---@field public ignore_filetypes? string[]
+---@field public indicator? integer
+---@field public jump_key? string
+---@field public off_side? string[]
+---@field public priority? integer
+---@field public show_parent? boolean
+---@field public show_next? boolean
+---@field public sign? boolean
+---@field public symbols? table<string,string>
+
+---@class Cache
+---@field public ns integer
+---@field public hlgroups {[hlKeys]:hlGroups}
+---@field public hldetails {[hlGroups]: vim.api.keyset.highlight}
+---@field public hl {[nodeScope]:{on:hlGroups,off:hlGroups}}
+---@field public captures string[]
+---@field public searchpairs SearchPairs
+---@field public extends integer
+---@field public precedes integer
+---@field public markers Markers
+---@field public changetick integer
+---@field public skip_matching boolean
+---@field public last Last
+---@field public setup fun(self:self,UNIQUE_NAME:string,hl:hl):self
+---@field public init fun(self:self)
+---@field public update_captures fun(self:self,filetype?:string)
+---@field public update_searchpairs fun(self:self)
+---@field public update_wrap_marker fun(self:self)
+
+---@class Instance
+---@field public is_insert_mode boolean
+---@field public bufnr integer
+---@field public winid integer
+---@field public winwidth integer
+---@field public wincol integer
+---@field public leftcol integer
+---@field public filetype string
+---@field public changetick integer
+---@field public top_row integer
+---@field public bottom_row integer
+---@field public cur_row integer
+---@field public cur_col integer
+---@field public sentence string
+---@field public line_length integer
+---@field public match MatchItems
+---@field public last Last
+
+---@class Matchwith: Instance
+---@field public init_cache fun(cache:Cache) Initial cache table
+---@field public clear_extmark fun(self:self,scope:nodeScope):boolean Clear the scope matchpairs
+---@field public new fun(self:self,is_insert_mode:boolean):Matchwith Setup new instance table
+---@field public get_matches fun(self:self) Traverse the syntax tree
+---@field public get_prev_end_col fun(self:self,scope:nodeScope):integer Get the ending column of the previous node
+---@field public get_searchpairpos fun(self:self,searchpair_opts:string[],col?:integer):integer[] Get search result for searchpairpos
+---@field public store_searchpairpos fun(self:self):boolean? Store search result of searchpairpos
+---@field public verify_match fun(self:self) Verify matcing nodes in syntax tree
+---@field public pair_marker_direction fun(self:self,pair_range:Range4,is_start_point:boolean):integer Whether the pair's position is on-screen or off-screen
+---@field public draw_markers fun(self:self,scope:nodeScope) Draws information for the scope matchpairs
+---@field public add_marker fun(self:self,id:integer,hl_group:hlGroups,word_range:Range4,sign_options?:vim.api.keyset.set_extmark) Add highlight to the range
+---@field public set_indicator fun(self:self,symbol:string|nil):vim.api.keyset.set_extmark Set indicator and sign for matchpairs
+---@field public matching fun(is_insert_mode?:boolean):boolean? Search a matchpair
+---@field public jumping fun(self:self) Jump the matchpair
+---@field public setup fun(opts:Options,force:boolean) Setup matchwith
