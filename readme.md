@@ -38,7 +38,7 @@ Highlight the next capture match and parent node match.
 Defalut values.
 
 ```lua
-require('matchwith.config').setup({
+require('matchwith').setup({
     captures = {
         ['*'] = { 'keyword.function', 'keyword.repeat', 'keyword.conditional', 'punctuation.bracket', 'constructor' },
         off_side = { 'punctuation.bracket' },
