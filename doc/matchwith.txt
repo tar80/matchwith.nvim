@@ -24,6 +24,8 @@ VARIABLES                                                   *matchwith-variable*
         b:matchwith_disable                                *b:matchwith_disable*
                 If this value is truthy, matchwith disabled on that buffer.
 
+        g:matchwith_alter_filetypes                  |matchwith-alter-filetypes|
+
         g:matchwith_captures                                |matchwith-captures|
 
         g:matchwith_debounce_time                           |matchwith-debounce|
@@ -56,11 +58,12 @@ setup({options})                                      *matchwith.config.setup()*
         Setup matchwith.
 
         Parameters: ~
+              {alter_filetypes}   (boolean):         |matchwith-alter-filetypes|
               {captures}          (table):                  |matchwith-captures|
               {debounce_time}     (integer):                |matchwith-debounce|
               {depth_limit}       (integer):             |matchwith-depth-limit|
-              {ignore_filetypes}  (boolean):                |matchwith-filetype|
-              {ignore_buftypes}   (boolean):                 |matchwith-buftype|
+              {ignore_filetypes}  (boolean):        |matchwith-ignore-filetypes|
+              {ignore_buftypes}   (boolean):         |matchwith-ignoreibuftypes|
               {indicator}         (integer):               |matchwith-indicator|
               {jump_key}          (string):                  |matchwith-jumpkey|
               {off_side}          (table):                  |matchwith-off-side|
@@ -75,6 +78,16 @@ CONFIGURATION                                          *matchwith-configuration*
 
 Default settings ~
 
+alter_filetypes                                      *matchwith-alter-filetypes*
+
+        This option allows you to specify an alternative parser name when
+        the filetype and the actual parser name to be used differ.
+        For example, you can set it up like this:
+>lua
+        { javascriptreact = 'javascript' }.
+<
+            Type: `table`
+            Default: {}
 captures                                                    *matchwith-captures*
 
         Captures to apply matchwith. off-side is a capture group applied to
@@ -108,14 +121,14 @@ depth_limit                                              *matchwith-depth-limit*
             Type: `integer`
             Default: 10
 
-ignore_filetypes                                            *matchwith-filetype*
+ignore_filetypes                                    *matchwith-ignore-filetypes*
 
         Filetypes that do not perform matchwith.
 
             Type: `table`
             Default: { "vimdoc" }
 
-ignore_buftypes                                              *matchwith-buftype*
+ignore_buftypes                                      *matchwith-ignore-buftypes*
 
         Buftypes that do not perform matchwith.
 

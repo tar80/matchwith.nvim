@@ -45,7 +45,6 @@ function Matchwith:new(is_insert_mode)
   Instance['winwidth'] = vim.api.nvim_win_get_width(Instance.winid)
   Instance['wincol'] = vim.fn.wincol()
   Instance['leftcol'] = vim.fn.winsaveview().leftcol
-  Instance['filetype'] = vim.api.nvim_get_option_value('filetype', { buf = Instance.bufnr })
   Instance['changetick'] = vim.api.nvim_buf_get_changedtick(Instance.bufnr)
   Instance['top_row'] = zerobase(vim.fn.line('w0'))
   Instance['bottom_row'] = zerobase(vim.fn.line('w$'))
@@ -53,9 +52,11 @@ function Matchwith:new(is_insert_mode)
   Instance['line_length'] = math.max(0, zerobase(#Instance.sentence))
   Instance['match'] = { cur = {}, next = {}, parent = {} }
   Instance['last'] = {}
+  local ft = vim.api.nvim_get_option_value('filetype', { buf = Instance.bufnr })
   local pos = vim.api.nvim_win_get_cursor(Instance.winid)
   local row, col = zerobase(pos[1]), pos[2]
   col = col - (Instance.is_insert_mode and 1 or 0)
+  Instance['filetype'] = vim.g.matchwith_alter_filetypes[ft] or ft
   Instance['cur_row'] = row
   Instance['cur_col'] = col
   if vim.api.nvim_get_option_value('list', { win = Instance.winid }) then

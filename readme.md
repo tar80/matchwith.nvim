@@ -57,3 +57,17 @@ require('matchwith').setup({
     symbols = { [1] = '↑', [2] = '↓', [3] = '→', [4] = '↗', [5] = '↘', [6] = '←', [7] = '↖', [8] = '↙' },
 })
 ```
+
+To properly handle HTML and other framework-specific elements,  
+consider adding the following options.
+
+```lua
+opts = {
+  alter_filetypes = { javascriptreact = 'javascript' },
+  captures = {
+    javascript = { 'tag.delimiter', 'punctuation.bracket' 'keyword.function', 'keyword.repeat', 'keyword.conditional', 'constructor' },
+    html = { 'tag.delimiter', 'punctuation.bracket' },
+    svelte = { 'tag.delimiter', 'punctuation.bracket' },
+  }
+},
+```

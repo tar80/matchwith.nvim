@@ -4,6 +4,7 @@ local validate = require('matchwith.compat').validate
 local DEFAULT_MATCH = 'MatchParen'
 local DEFAULT_MATCH_OUT = 'Error'
 local DEFAULT_OPT = {
+  alter_filetypes = { javascriptreact = 'javascript' },
   captures = {
     ['*'] = { 'keyword.function', 'keyword.repeat', 'keyword.conditional', 'punctuation.bracket', 'constructor' },
     off_side = { 'punctuation.bracket' },
@@ -60,6 +61,7 @@ local hl_details = {
 ---@return {groups: HlGroups, details: {[string]:{fg:string,bg:string}}}
 function M.set_options(UNIQUE_NAME, opts)
   opts = opts or {}
+  validate('alter_filetypes', opts.alter_filetypes, 'table', true)
   validate('captures', opts.captures, 'table', true)
   validate('depth_limit', opts.depth_limit, 'number', true)
   validate('debounce_time', opts.debounce_time, 'number', true)
@@ -75,6 +77,7 @@ function M.set_options(UNIQUE_NAME, opts)
   validate('symbols', opts.symbols, 'table', true)
 
   vim.g.loaded_matchwith = true
+  vim.g.matchwith_alter_filetypes = DEFAULT_OPT.alter_filetypes
   vim.g.matchwith_captures = DEFAULT_OPT.captures
   vim.g.matchwith_debounce_time = opts.debounce_time or DEFAULT_OPT.debounce_time
   vim.g.matchwith_depth_limit = (opts.depth_limit or DEFAULT_OPT.depth_limit) * 2
@@ -97,6 +100,7 @@ function M.set_options(UNIQUE_NAME, opts)
     end
     vim.g.matchwith_captures = vim.tbl_deep_extend('force', vim.g.matchwith_captures, opts.captures or {})
   end
+  vim.g.matchwith_alter_filetypes = vim.list_extend(vim.g.matchwith_alter_filetypes, opts.alter_filetypes or {})
   vim.g.matchwith_ignore_buftypes = vim.list_extend(vim.g.matchwith_ignore_buftypes, opts.ignore_buftypes or {})
   vim.g.matchwith_ignore_filetypes = vim.list_extend(vim.g.matchwith_ignore_filetypes, opts.ignore_filetypes or {})
   vim.g.matchwith_off_side = vim.list_extend(vim.g.matchwith_off_side, opts.off_side or {})

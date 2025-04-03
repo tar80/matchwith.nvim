@@ -32,6 +32,7 @@ end
 
 function M:update_captures(filetype)
   filetype = filetype or vim.api.nvim_get_option_value('filetype', {})
+  filetype = vim.g.matchwith_alter_filetypes[filetype] or filetype
   local ft_captures = vim.g.matchwith_captures
   local off_side = vim.g.matchwith_off_side
   local match_captures = ft_captures[filetype]
