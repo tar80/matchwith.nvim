@@ -25,6 +25,7 @@ end
 -- Get list of option values
 ---@param name string vim option name
 ---@param option? table
+---@return string[]
 function M.split_option_value(name, option)
   return vim.split(vim.api.nvim_get_option_value(name, option or {}), ',', { plain = true })
 end

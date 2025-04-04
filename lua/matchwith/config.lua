@@ -4,7 +4,7 @@ local validate = require('matchwith.compat').validate
 local DEFAULT_MATCH = 'MatchParen'
 local DEFAULT_MATCH_OUT = 'Error'
 local DEFAULT_OPT = {
-  alter_filetypes = { javascriptreact = 'javascript' },
+  alter_filetypes = {},
   captures = {
     ['*'] = { 'keyword.function', 'keyword.repeat', 'keyword.conditional', 'punctuation.bracket', 'constructor' },
     off_side = { 'punctuation.bracket' },

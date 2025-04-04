@@ -47,15 +47,18 @@ end
 
 function M:update_searchpairs()
   local chrs, matchpair = {}, {}
-  vim.tbl_map(function(v)
-    ---@type string,string
-    local s, e = unpack(vim.split(v, ':', { plain = true }))
-    local adjust_s = s == '[' and '\\[' or s
-    local adjust_e = e == ']' and '\\]' or e
-    matchpair[s] = { adjust_s, '', adjust_e, 'nW' }
-    matchpair[e] = { adjust_s, '', adjust_e, 'bnW' }
-    vim.list_extend(chrs, { s, e })
-  end, helper.split_option_value('matchpairs', { scope = 'local' }))
+  local matchpairs = helper.split_option_value('matchpairs', { scope = 'local' })
+  if matchpairs[1] ~= '' then
+    vim.tbl_map(function(v)
+      ---@type string,string
+      local s, e = unpack(vim.split(v, ':', { plain = true }))
+      local adjust_s = s == '[' and '\\[' or s
+      local adjust_e = e == ']' and '\\]' or e
+      matchpair[s] = { adjust_s, '', adjust_e, 'nW' }
+      matchpair[e] = { adjust_s, '', adjust_e, 'bnW' }
+      vim.list_extend(chrs, { s, e })
+    end, helper.split_option_value('matchpairs', { scope = 'local' }))
+  end
   self.searchpairs = { chrs = chrs, matchpair = matchpair }
 end
 
