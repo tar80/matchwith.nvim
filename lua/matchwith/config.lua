@@ -100,11 +100,12 @@ function M.set_options(UNIQUE_NAME, opts)
   vim.g.matchwith_ignore_buftypes = vim.list_extend(vim.g.matchwith_ignore_buftypes, opts.ignore_buftypes or {})
   vim.g.matchwith_ignore_filetypes = vim.list_extend(vim.g.matchwith_ignore_filetypes, opts.ignore_filetypes or {})
   vim.g.matchwith_off_side = vim.list_extend(vim.g.matchwith_off_side, opts.off_side or {})
+  ---@diagnostic disable-next-line: undefined-field
   if opts.alter_filetypes then
     vim.notify_once(
-        [=[matchwith.nvim: The opts.alter_filetypes is no longer available. The parser used is automatically determined.]=],
-        vim.log.levels.INFO,
-        {}
+      [=[matchwith.nvim: The opts.alter_filetypes is no longer available. The parser used is automatically determined.]=],
+      vim.log.levels.INFO,
+      {}
     )
   end
   if opts.sign then
@@ -113,9 +114,26 @@ function M.set_options(UNIQUE_NAME, opts)
   end
   if opts.jump_key then
     vim.cmd('silent! MatchDisable')
-    vim.keymap.set({ 'n', 'x', 'o' }, opts.jump_key, function()
+    local function operator_matchpair(modifier)
+      local scope = Cache.last.scope
+      if scope and Cache.last[scope] then
+        local match = Cache.last[scope]
+        local col = modifier == 'i' and { match[1][4], match[2][2] } or { match[1][2], match[2][4] }
+        local range = { from = { match[1][1] + 1, col[1] }, to = { match[2][3] + 1, col[2] - 1 } }
+        vim.api.nvim_buf_set_mark(0, '<', range.from[1], range.from[2], {})
+        vim.api.nvim_buf_set_mark(0, '>', range.to[1], range.to[2], {})
+        vim.cmd([[normal gv]])
+      end
+    end
+    vim.keymap.set({ 'n', 'x' }, opts.jump_key, function()
       require('matchwith.core'):jumping()
     end, { desc = ('%s: jump to matchpair'):format(UNIQUE_NAME) })
+    vim.keymap.set({ 'o', 'x' }, 'i' .. opts.jump_key, function()
+      operator_matchpair('i')
+    end, { desc = ('%s: select inner matchpair'):format(UNIQUE_NAME) })
+    vim.keymap.set({ 'o', 'x' }, 'a' .. opts.jump_key, function()
+      operator_matchpair('a')
+    end, { desc = ('%s: select matchpair range'):format(UNIQUE_NAME) })
   end
   return { groups = HL_GROUPS, details = hl_details }
 end
