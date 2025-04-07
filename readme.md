@@ -61,9 +61,12 @@ require('matchwith').setup({
 To properly handle HTML and other framework-specific elements,  
 consider adding the following options.
 
+> [!NOTE]
+> `opts.alter_filetypes` is no longer available. The parser used is automatically determined.
+
 ```lua
 opts = {
-  alter_filetypes = { javascriptreact = 'javascript' },
+  alter_filetypes -- @deprecated
   captures = {
     javascript = { 'tag.delimiter', 'punctuation.bracket' 'keyword.function', 'keyword.repeat', 'keyword.conditional', 'constructor' },
     html = { 'tag.delimiter', 'punctuation.bracket' },

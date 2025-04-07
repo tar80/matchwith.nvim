@@ -12,6 +12,8 @@ Interface                                                  |matchwith-interface|
   configuration                                        |matchwith-configuration|
   hlgroup                                                    |matchwith-hlgroup|
 
+Deprecated                                                |matchwith-deprecated|
+
 ==============================================================================
 INTERFACE                                                  *matchwith-interface*
 
@@ -58,7 +60,6 @@ setup({options})                                      *matchwith.config.setup()*
         Setup matchwith.
 
         Parameters: ~
-              {alter_filetypes}   (boolean):         |matchwith-alter-filetypes|
               {captures}          (table):                  |matchwith-captures|
               {debounce_time}     (integer):                |matchwith-debounce|
               {depth_limit}       (integer):             |matchwith-depth-limit|
@@ -78,16 +79,6 @@ CONFIGURATION                                          *matchwith-configuration*
 
 Default settings ~
 
-alter_filetypes                                      *matchwith-alter-filetypes*
-
-        This option allows you to specify an alternative parser name when
-        the filetype and the actual parser name to be used differ.
-        For example, you can set it up like this:
->lua
-        { javascriptreact = 'javascript' }.
-<
-            Type: `table`
-            Default: {}
 captures                                                    *matchwith-captures*
 
         Captures to apply matchwith. off-side is a capture group applied to
@@ -244,6 +235,14 @@ HLGROUP                                                      *matchwith-hlgroup*
 *MatchwithSign*
 
         Used for symbols displayed in signcolumn
+
+==============================================================================
+DEPRECATED                                                *matchwith-deprecated*
+
+|alter_filetypes|
+
+        This option allows you to specify an alternative parser name when
+        the filetype and the actual parser name to be used differ.
 
 ==============================================================================
 vim:tw=78:sw=4:ts=8:ft=help:norl:noet:
