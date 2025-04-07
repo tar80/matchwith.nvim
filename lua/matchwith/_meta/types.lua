@@ -19,7 +19,6 @@
 ---@alias IsStartPoint boolean
 
 ---@class Options
----@field public alter_filetypes? table<string,string>
 ---@field public captures? string[]
 ---@field public debounce_time? integer
 ---@field public depth_limit? integer

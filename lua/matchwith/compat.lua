@@ -1,10 +1,10 @@
---NOTE: This module is provided to ensure compatibility with version 0.10.
+--NOTE: This module is provided to ensure compatibility with version 0.11.
 
 local M = {}
 
 ---@alias Encoding 'utf-8'|'utf-16'|'utf-32'
 
-local has_next_version = vim.fn.has('nvim-0.11') == 1
+local has_next_version = vim.fn.has('nvim-0.12') == 1
 
 ---@param name string Argument name
 ---@param value any Argument value
@@ -39,7 +39,7 @@ end
 ---@param hlgroup string
 ---@param word_range Range4
 ---@param opts table
----@return integer|nil
+---@return uv.uv_timer_t?|fun()?|nil
 function M.hl_range(bufnr, namespace, hlgroup, word_range, opts)
   if has_next_version then
     local s = { word_range[1], word_range[2] }

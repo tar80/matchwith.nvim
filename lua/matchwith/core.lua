@@ -56,7 +56,7 @@ function Matchwith:new(is_insert_mode)
   local pos = vim.api.nvim_win_get_cursor(Instance.winid)
   local row, col = zerobase(pos[1]), pos[2]
   col = col - (Instance.is_insert_mode and 1 or 0)
-  Instance['filetype'] = vim.g.matchwith_alter_filetypes[ft] or ft
+  Instance['filetype'] = vim.treesitter.language.get_lang(ft)
   Instance['cur_row'] = row
   Instance['cur_col'] = col
   if vim.api.nvim_get_option_value('list', { win = Instance.winid }) then
