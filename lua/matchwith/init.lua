@@ -7,7 +7,7 @@ function M.setup(opts, force)
   local UNIQUE_NAME = 'matchwith.nvim'
   local hl = require('matchwith.config').set_options(UNIQUE_NAME, opts)
   require('matchwith.helper').set_hl(hl.details)
-  Cache = require('matchwith.cache'):setup(UNIQUE_NAME, hl)
+  local Cache = require('matchwith.cache'):setup(UNIQUE_NAME, hl)
   require('matchwith.core').init_cache(Cache)
   require('matchwith.autocmd').setup(UNIQUE_NAME, Cache)
   vim.cmd('silent! NoMatchParen')
