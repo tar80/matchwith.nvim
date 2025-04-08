@@ -10,6 +10,7 @@ Interface                                                  |matchwith-interface|
   variable                                                  |matchwith-variable|
   function                                                  |matchwith-function|
   configuration                                        |matchwith-configuration|
+  mapping                                                    |matchwith-mapping|
   hlgroup                                                    |matchwith-hlgroup|
 
 Deprecated                                                |matchwith-deprecated|
@@ -204,6 +205,27 @@ symbols                                                      *matchwith-symbols*
                 [7] = '↖',
                 [8] = '↙'
             }
+
+------------------------------------------------------------------------------
+MAPPING                                                      *matchwith-mapping*
+
+Operator key to select matchpair range.
+
+<Plug>(matchwith-operator-i)
+
+        Inner range of the current or next matchpair.
+
+<Plug>(matchwith-operator-a)
+
+        A range of the current or next matchpair.
+
+<Plug>(matchwith-operator-parent-i)
+
+        Inner range of the parent matchpair.
+
+<Plug>(matchwith-operator-parent-i)
+
+        A range of the parent matchpair.
 
 ------------------------------------------------------------------------------
 HLGROUP                                                      *matchwith-hlgroup*

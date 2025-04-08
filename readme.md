@@ -46,7 +46,7 @@ require('matchwith').setup({
     debounce_time = 50,
     depth_limit = 10,
     ignore_buftypes = { 'nofile' },
-    ignore_filetypes = { 'vimdoc' }, -- Suggested items: 'TelescopePrompt', 'TelescopeResults', 'cmp_menu', 'cmp_docs' ,'fidget'
+    ignore_filetypes = { 'vimdoc' }, -- Suggested items: 'TelescopePrompt', 'TelescopeResults', 'cmp_menu', 'cmp_docs' ,'fidget', 'snacks_picker_input'
     indicator = 0,
     jump_key = nil, -- e.g. '%'
     off_side = { 'query', 'fsharp', 'haskell', 'ocaml', 'make', 'nim', 'python', 'sass', 'scss', 'yaml' },
@@ -73,4 +73,22 @@ opts = {
     svelte = { 'tag.delimiter', 'punctuation.bracket' },
   }
 },
+```
+
+### Operator keys
+
+Matchwith provides four operator keys corresponding to matchepair.
+
+- `<Plug>(matchwith-operator-i)` Inner range of the current/next matchpair
+- `<Plug>(matchwith-operator-a)` A range of the current/next matchpair
+- `<Plug>(matchwith-operator-parent-i)` Inner range or the parent matchpair
+- `<Plug>(matchwith-operator-parent-a)` A range or the parent matchpair
+
+Register like this:
+
+```lua
+vim.keymap.set({'o','x'}, 'i%', '<Plug>(matchwith-operator-i)')
+vim.keymap.set({'o','x'}, 'a%', '<Plug>(matchwith-operator-a)')
+vim.keymap.set({'o','x'}, 'iP', '<Plug>(matchwith-operator-parent-i)')
+vim.keymap.set({'o','x'}, 'aP', '<Plug>(matchwith-operator-parent-a)')
 ```
