@@ -10,6 +10,7 @@ function M.setup(opts, force)
   local Cache = require('matchwith.cache'):setup(UNIQUE_NAME, hl)
   require('matchwith.core').init_cache(Cache)
   require('matchwith.autocmd').setup(UNIQUE_NAME, Cache)
+  require('matchwith.keymap').set_operator(UNIQUE_NAME, Cache)
   vim.cmd('silent! NoMatchParen')
 end
 
