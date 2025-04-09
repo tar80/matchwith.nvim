@@ -81,8 +81,8 @@ Matchwith provides four operator keys corresponding to matchepair.
 
 - `<Plug>(matchwith-operator-i)` Inner range of the current/next matchpair
 - `<Plug>(matchwith-operator-a)` A range of the current/next matchpair
-- `<Plug>(matchwith-operator-parent-i)` Inner range or the parent matchpair
-- `<Plug>(matchwith-operator-parent-a)` A range or the parent matchpair
+- `<Plug>(matchwith-operator-parent-i)` Inner range of the parent matchpair
+- `<Plug>(matchwith-operator-parent-a)` A range of the parent matchpair
 
 Register like this:
 
