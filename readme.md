@@ -68,7 +68,7 @@ consider adding the following options.
 opts = {
   alter_filetypes -- @deprecated
   captures = {
-    javascript = { 'tag.delimiter', 'punctuation.bracket' 'keyword.function', 'keyword.repeat', 'keyword.conditional', 'constructor' },
+    javascript = { 'tag.delimiter', 'punctuation.bracket' 'keyword.function', 'keyword.repeat', 'keyword.conditional' },
     html = { 'tag.delimiter', 'punctuation.bracket' },
     svelte = { 'tag.delimiter', 'punctuation.bracket' },
   }
