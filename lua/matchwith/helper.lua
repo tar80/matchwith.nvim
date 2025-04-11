@@ -3,6 +3,7 @@
 local M = {}
 
 ---@alias LogLevels 'TRACE'|'DEBUG'|'INFO'|'WARN'|'ERROR'|'OFF'
+---@alias UtfEncoding 'utf-8'|'utf-16'|'utf-32'
 
 ---@param name string
 ---@param message string
@@ -67,11 +68,35 @@ function M.is_enable_user_var(name)
   return _is_truthy(b) or _is_truthy(g)
 end
 
+local function _value_converter(value)
+  local tbl = {}
+  local t = type(value)
+  if t == 'function' then
+    tbl = value()
+    return type(tbl) == 'table' and tbl or {}
+  elseif t == 'string' then
+    return { value }
+  elseif t == 'table' then
+    for att, _value in pairs(value) do
+      local att_t = type(_value)
+      if att_t == 'function' then
+        _value = _value()
+        if _value then
+          tbl[att] = _value
+        end
+      end
+      tbl[att] = _value
+    end
+    return tbl
+  end
+  return tbl
+end
+
 -- Set default highlights
 ---@param hlgroups table<string,vim.api.keyset.highlight>
 function M.set_hl(hlgroups)
   vim.iter(hlgroups):each(function(name, value)
-    local hl = type(value) == 'function' and value() or value
+    local hl = _value_converter(value)
     hl['default'] = true
     vim.api.nvim_set_hl(0, name, hl)
   end)

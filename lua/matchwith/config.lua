@@ -39,26 +39,34 @@ local HL_GROUPS = {
   SIGN = 'MatchwithSign',
 }
 
-local on_fg = function()
-  return vim.api.nvim_get_hl(0, { name = DEFAULT_MATCH }).fg
+---@param name string
+---@return fun():integer?
+local _lazy_foreground_getter = function(name)
+  local tbl = {}
+  return function()
+    if tbl[name] then
+      return tbl[name]
+    end
+    tbl[name] = vim.api.nvim_get_hl(0, { name = name }).fg
+    return tbl[name]
+  end
 end
-local off_fg = function()
-  return vim.api.nvim_get_hl(0, { name = DEFAULT_MATCH_OUT }).fg
-end
+
+local on_fg = _lazy_foreground_getter(DEFAULT_MATCH)
+local off_fg = _lazy_foreground_getter(DEFAULT_MATCH_OUT)
 local hl_details = {
-  [HL_GROUPS.ON] = { sp = on_fg(), underline = true },
-  [HL_GROUPS.OFF] = { sp = off_fg(), underline = true },
-  [HL_GROUPS.NEXT_ON] = { sp = on_fg(), underline = true },
-  [HL_GROUPS.NEXT_OFF] = { sp = off_fg(), underline = true },
-  [HL_GROUPS.PARENT_ON] = { fg = on_fg(), bold = true },
-  [HL_GROUPS.PARENT_OFF] = { fg = off_fg(), bold = true },
-  [HL_GROUPS.SIGN] = { fg = on_fg(), bold = true },
+  [HL_GROUPS.ON] = { sp = on_fg, underline = true },
+  [HL_GROUPS.OFF] = { sp = off_fg, underline = true },
+  [HL_GROUPS.NEXT_ON] = { sp = on_fg, underline = true },
+  [HL_GROUPS.NEXT_OFF] = { sp = off_fg, underline = true },
+  [HL_GROUPS.PARENT_ON] = { fg = on_fg, bold = true },
+  [HL_GROUPS.PARENT_OFF] = { fg = off_fg, bold = true },
+  [HL_GROUPS.SIGN] = { fg = on_fg, bold = true },
 }
 
----@param UNIQUE_NAME string
 ---@param opts Options User specified options
 ---@return {groups: HlGroups, details: {[string]:{fg:string,bg:string}}}
-function M.set_options(UNIQUE_NAME, opts)
+function M.set_options(opts)
   opts = opts or {}
   validate('captures', opts.captures, 'table', true)
   validate('depth_limit', opts.depth_limit, 'number', true)
@@ -111,12 +119,6 @@ function M.set_options(UNIQUE_NAME, opts)
   if opts.sign then
     vim.g.matchwith_sign = true
     hl_details[HL_GROUPS.SIGN] = hl_details[HL_GROUPS.SIGN]
-  end
-  if opts.jump_key then
-    vim.cmd('silent! MatchDisable')
-    vim.keymap.set({ 'n', 'x' }, opts.jump_key, function()
-      require('matchwith.core'):jumping()
-    end, { desc = ('%s: jump to matchpair'):format(UNIQUE_NAME) })
   end
   return { groups = HL_GROUPS, details = hl_details }
 end

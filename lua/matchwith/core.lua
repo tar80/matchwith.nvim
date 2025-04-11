@@ -1,17 +1,12 @@
 ---@class Matchwith
 local Matchwith = {}
 Matchwith.__index = Matchwith
+---@class Cache
+local Cache = require('matchwith.cache')
 local helper = require('matchwith.helper')
 local render = require('matchwith.render')
 local ts = require('matchwith.treesitter')
 local util = require('matchwith.util')
-
----@class Cache
-local Cache
-
-function Matchwith.init_cache(cache)
-  Cache = cache
-end
 
 --[[ NOTE:
 -- The cursor position is calculated based on a zero index.

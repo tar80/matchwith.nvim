@@ -1,6 +1,6 @@
 local M = {}
 
-function M.set_operator(UNIQUE_NAME, Cache)
+function M.setup(UNIQUE_NAME, Cache)
   ---@param modifier 'i'|'a'
   ---@param is_parent? boolean
   local function operator_matchpair(modifier, is_parent)
