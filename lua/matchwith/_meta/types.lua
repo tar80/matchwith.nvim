@@ -1,10 +1,10 @@
 ---@meta
 
----@alias hl {groups: HlGroups, details: {[string]:{fg:string,bg:string}}}
+---@alias hl {groups: HlGroups, details: {[hlGroups]:{fg:string,bg:string}}}
 ---@alias hlGroups 'Matchwith'|'MatchwithOut'|'MatchwithNext'|'MatchwithNextOut'|'MatchwithParent'|'MatchwithParentOut'|'MatchwithSign'
 ---@alias hlKeys 'ON'|'OFF'|'NEXT_ON'|'NEXT_OFF'|'PARENT_ON'|'PARENT_OFF'|'SIGN'
 ---@alias nodeScope 'cur'|'parent'|'next'
--- [1]:Start row, [2]:Start column, [3]:End column
+-- prev_end_col is the end column of the capture before the cursor position within the cursor's row. 0 is assigned when no capture exists.
 ---@alias MatchItems {prev_end_col:integer,[nodeScope]:MatchItem}
 ---@alias MatchItem {node:TSNode,range:Range4,ancestor_nodes:TSNode[],at_cursor?:boolean}
 ---@alias Last {cur?:LastMatch,next?:LastMatch,parent?:LastMatch,range:Range4,scope:nodeScope,is_start_point:boolean}
@@ -14,7 +14,7 @@
 ---@alias SearchPairs {chrs:string[],matchpair:table<string,string[]>}
 -- The starting line and ending line of the highlight are specified.
 -- The ending line must be incremented by 1 to be included in the range.
----[1]:start row, [2]end row
+---[1]:start row, [2]:end row
 ---@alias Markers {[nodeScope]:{[1]:integer,[2]:integer}}
 ---@alias IsStartPoint boolean
 
@@ -46,7 +46,7 @@
 ---@field public changetick integer
 ---@field public skip_matching boolean
 ---@field public last Last
----@field public setup fun(self:self,UNIQUE_NAME:string,hl:hl):self
+---@field public setup fun(self:self,UNIQUE_NAME:string,hl:hl):self Initialize internal cache
 ---@field public init fun(self:self)
 ---@field public update_captures fun(self:self,filetype?:string)
 ---@field public update_searchpairs fun(self:self)
@@ -59,21 +59,21 @@
 ---@field public winwidth integer
 ---@field public wincol integer
 ---@field public leftcol integer
----@field public filetype string
 ---@field public changetick integer
 ---@field public top_row integer
 ---@field public bottom_row integer
----@field public cur_row integer
----@field public cur_col integer
 ---@field public sentence string
 ---@field public line_length integer
 ---@field public match MatchItems
 ---@field public last Last
+---@field public language string Target of treesitter language parser name
+---@field public cur_row integer
+---@field public cur_col integer
 
 ---@class Matchwith: Instance
 ---@field public init_cache fun(cache:Cache) Initial cache table
 ---@field public clear_extmark fun(self:self,scope:nodeScope):boolean Clear the scope matchpairs
----@field public new fun(self:self,is_insert_mode:boolean):Matchwith Setup new instance table
+---@field public new fun(self:self,is_insert_mode?:boolean):Matchwith Setup new instance table
 ---@field public get_matches fun(self:self) Traverse the syntax tree
 ---@field public get_prev_end_col fun(self:self,scope:nodeScope):integer Get the ending column of the previous node
 ---@field public get_searchpairpos fun(self:self,searchpair_opts:string[],col?:integer):integer[] Get search result for searchpairpos

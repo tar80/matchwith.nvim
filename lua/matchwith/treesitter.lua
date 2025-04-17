@@ -2,9 +2,15 @@ local M = {}
 
 local ts = vim.treesitter
 
+---@param filetype string
+---@return string|nil Language-parser-name
+function M.get_language(filetype)
+  return ts.language.get_lang(filetype)
+end
+
 ---@param language string Query language
 ---@return vim.treesitter.Query?
-function M.get_query(language)
+function M.get_highlights_query(language)
   return ts.query.get(language, 'highlights')
 end
 
@@ -45,38 +51,12 @@ function M.node_contains(range1, range2)
   return ts._range.contains(range1, range2)
 end
 
--- for compatibility ver 0.10
-local _ts_get_parser = (function()
-  local get_parser = ts.get_parser
-  local f ---@type function
-  if vim.fn.has('nvim-0.11') == 1 then
-    f = function(bufnr, filetype, option)
-      return true, get_parser(bufnr, filetype, option)
-    end
-  else
-    f = function(bufnr, filetype, _)
-      return pcall(get_parser, bufnr, filetype)
-    end
-  end
-  return f
-end)()
-
 -- Get the treesitter's language tree parser
 ---@param instance Instance Matchwith current session
 function M.get_parsers(instance)
   ---@type vim.treesitter.LanguageTree?
-  local lang_tree
-  if ts._get_parser then
-    lang_tree = ts._get_parser(instance.bufnr, instance.filetype)
-  else
-    -- TODO: Should handle get_parser return value change in neovim 12.
-    local ok = false
-    ok, lang_tree = _ts_get_parser(instance.bufnr, instance.filetype, { error = false })
-    if not ok then
-      return
-    end
-  end
-  return lang_tree
+  return ts._get_parser and ts._get_parser(instance.bufnr, instance.language)
+    or ts.get_parser(instance.bufnr, instance.language, { error = false })
 end
 
 ---@param name string

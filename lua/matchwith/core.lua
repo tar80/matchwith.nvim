@@ -33,7 +33,6 @@ end
 function Matchwith:new(is_insert_mode)
   ---@class Matchwith
   local Instance = setmetatable({}, self)
-  Instance['show_next'] = vim.g.matchwith_show_next
   Instance['is_insert_mode'] = is_insert_mode or helper.is_insert_mode()
   Instance['bufnr'] = vim.api.nvim_get_current_buf()
   Instance['winid'] = vim.api.nvim_get_current_win()
@@ -51,7 +50,7 @@ function Matchwith:new(is_insert_mode)
   local pos = vim.api.nvim_win_get_cursor(Instance.winid)
   local row, col = zerobase(pos[1]), pos[2]
   col = col - (Instance.is_insert_mode and 1 or 0)
-  Instance['filetype'] = vim.treesitter.language.get_lang(ft)
+  Instance['language'] = ts.get_language(ft)
   Instance['cur_row'] = row
   Instance['cur_col'] = col
   if vim.api.nvim_get_option_value('list', { win = Instance.winid }) then
@@ -120,7 +119,7 @@ function Matchwith:get_matches()
       local tsroot = tstree:root()
       local root_range = ts.range4(tsroot)
       if root_range[1] <= self.cur_row and self.cur_row <= root_range[3] then
-        local queries = ts.get_query(language)
+        local queries = ts.get_highlights_query(language)
         if queries then
           local match = iterate_langtree(self, tsroot, queries)
           self.match = vim.tbl_deep_extend('force', self.match, match)
@@ -241,7 +240,7 @@ end
 function Matchwith:store_searchpairpos()
   local start_col = self.match.cur.range and self.match.cur.range[4] + 1 or self.cur_col + 1
   local end_col = self.match.next.range and self.match.next.range[2] + 1 or self.line_length + 1
-  if (end_col - start_col) <= 0 and self.filetype ~= 'markdown' then
+  if (end_col - start_col) <= 0 and self.language ~= 'markdown' then
     return
   end
   local text = self.sentence:sub(start_col, end_col)
@@ -507,6 +506,9 @@ function Matchwith.matching(is_insert_mode)
   end
 
   local Instance = Matchwith:new(is_insert_mode)
+  if not Instance.language then
+    return
+  end
 
   if Instance.is_insert_mode and Instance.cur_col < 0 then
     if Cache.last.cur then
@@ -562,7 +564,7 @@ function Matchwith.matching(is_insert_mode)
     Instance:clear_extmarks(Cache.last.scope)
     Cache.last = Instance.last
     return
-  elseif not Instance.show_next then
+  elseif not vim.g.matchwith_show_next then
     Instance:clear_extmarks('cur')
   end
 
@@ -571,7 +573,7 @@ function Matchwith.matching(is_insert_mode)
   end
 
   Cache.last = Instance.last
-  if Instance.match.cur.at_cursor or Instance.show_next then
+  if Instance.match.cur.at_cursor or vim.g.matchwith_show_next then
     Instance:draw_markers(Cache.last.scope)
   end
 

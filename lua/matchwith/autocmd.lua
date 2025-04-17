@@ -3,6 +3,7 @@ local helper = require('matchwith.helper')
 local timer = require('matchwith.timer').set_timer()
 local matchwith = require('matchwith.core')
 
+---Setup autocommands
 ---@param UNIQUE_NAME string
 ---@param Cache Cache
 function M.setup(UNIQUE_NAME, Cache)
@@ -16,7 +17,7 @@ function M.setup(UNIQUE_NAME, Cache)
     desc = with_unique_name('%s: update matchpair drawing'),
     group = augroup,
     callback = function()
-      if not helper.is_enable_user_var('matchwith_disable') then
+      if not helper.is_enable_user_vars('matchwith_disable') then
         timer.debounce(vim.g.matchwith_debounce_time, function()
           matchwith.matching()
         end)
@@ -27,10 +28,10 @@ function M.setup(UNIQUE_NAME, Cache)
     desc = with_unique_name('%s: update matchpair drawing'),
     group = augroup,
     callback = function(ev)
-      if not helper.is_enable_user_var('matchwith_disable') then
-        local is_insert_mode = ev.event == 'InsertEnter'
-        matchwith.matching(is_insert_mode)
-        Cache.skip_matching = is_insert_mode
+      if not helper.is_enable_user_vars('matchwith_disable') then
+        local _is_insert_mode = ev.event == 'InsertEnter'
+        matchwith.matching(_is_insert_mode)
+        Cache.skip_matching = _is_insert_mode
       end
     end,
   })
@@ -38,7 +39,7 @@ function M.setup(UNIQUE_NAME, Cache)
     desc = with_unique_name('%s: update enable captures'),
     group = augroup,
     callback = function()
-      if not helper.is_enable_user_var('matchwith_disable') then
+      if not helper.is_enable_user_vars('matchwith_disable') then
         Cache:update_captures()
       end
     end,
@@ -46,11 +47,13 @@ function M.setup(UNIQUE_NAME, Cache)
   vim.api.nvim_create_autocmd('BufEnter', {
     desc = with_unique_name('%s: update buffer configrations'),
     group = augroup,
-    callback = function()
-      Cache.skip_matching = true
-      if not helper.is_enable_user_var('matchwith_disable') then
-        vim.b.matchwith_disable = vim.tbl_contains(vim.g.matchwith_ignore_buftypes, vim.bo.buftype)
-        if not helper.is_enable_user_var('matchwith_disable') then
+    callback = function(ev)
+      if not helper.is_enable_user_vars('matchwith_disable') then
+        Cache.skip_matching = true
+        local _is_ignore_buftype = vim.tbl_contains(vim.g.matchwith_ignore_buftypes, vim.bo.buftype)
+        if _is_ignore_buftype then
+          vim.api.nvim_buf_set_var(ev.buf, 'matchwith_disable', true)
+        else
           Cache:update_searchpairs()
         end
       end
@@ -68,9 +71,11 @@ function M.setup(UNIQUE_NAME, Cache)
     desc = with_unique_name('%s: settings for each filetype'),
     group = augroup,
     callback = function(ev)
-      if not helper.is_enable_user_var('matchwith_disable') then
-        vim.b[ev.buf].matchwith_disable = vim.tbl_contains(vim.g.matchwith_ignore_filetypes, ev.match)
-        if not helper.is_enable_user_var('matchwith_disable') then
+      if not vim.b.matchwith_disable then
+        local _is_ignore_fuletype = vim.tbl_contains(vim.g.matchwith_ignore_filetypes, ev.match)
+        if _is_ignore_fuletype then
+          vim.api.nvim_buf_set_var(ev.buf, 'matchwith_disable', true)
+        else
           Cache:update_captures(ev.match)
         end
       end

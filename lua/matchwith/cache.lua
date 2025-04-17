@@ -2,27 +2,27 @@
 local M = {}
 local helper = require('matchwith.helper')
 
-local _initial_values = {
-  changetick = 0,
-  skip_matching = false,
-  last = {},
-}
-
 function M:setup(UNIQUE_NAME, hl)
   self.ns = vim.api.nvim_create_namespace(UNIQUE_NAME)
   self.hlgroups = hl.groups
   self.hldetails = hl.details
-  self.markers = { cur = { 1, 2 }, next = { 1, 2 }, parent = { 3, 4 } }
   self.hl = {
     cur = { on = hl.groups.ON, off = hl.groups.OFF },
     next = { on = hl.groups.NEXT_ON, off = hl.groups.NEXT_OFF },
     parent = { on = hl.groups.PARENT_ON, off = hl.groups.PARENT_OFF },
   }
+  self.markers = { cur = { 1, 2 }, next = { 1, 2 }, parent = { 3, 4 } }
   self:update_wrap_marker()
   self:update_captures()
   self:init()
   return self
 end
+
+local _initial_values = {
+  changetick = 0,
+  skip_matching = false,
+  last = {},
+}
 
 function M:init()
   vim.iter(_initial_values):each(function(key, value)
@@ -32,16 +32,16 @@ end
 
 function M:update_captures(filetype)
   filetype = filetype or vim.api.nvim_get_option_value('filetype', {})
-  filetype = vim.treesitter.language.get_lang(filetype)
-  local ft_captures = vim.g.matchwith_captures
+  local language = vim.treesitter.language.get_lang(filetype)
+  local lang_captures = vim.g.matchwith_captures
   local off_side = vim.g.matchwith_off_side
-  local match_captures = ft_captures[filetype]
+  local match_captures = lang_captures[language]
   if match_captures then
     self.captures = match_captures
-  elseif vim.tbl_contains(off_side, filetype, {}) then
-    self.captures = ft_captures['off_side']
+  elseif vim.tbl_contains(off_side, language, {}) then
+    self.captures = lang_captures['off_side']
   else
-    self.captures = ft_captures['*']
+    self.captures = lang_captures['*']
   end
 end
 

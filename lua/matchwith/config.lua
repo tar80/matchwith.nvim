@@ -118,7 +118,6 @@ function M.set_options(opts)
   end
   if opts.sign then
     vim.g.matchwith_sign = true
-    hl_details[HL_GROUPS.SIGN] = hl_details[HL_GROUPS.SIGN]
   end
   return { groups = HL_GROUPS, details = hl_details }
 end

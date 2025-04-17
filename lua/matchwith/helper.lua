@@ -60,11 +60,12 @@ local function _is_truthy(value)
   return value and tonumber(value) ~= 0
 end
 
+---Check the boolean value of user variables set locally/globally
 ---@param name string
 ---@return boolean
-function M.is_enable_user_var(name)
-  local g = vim.g[name]
+function M.is_enable_user_vars(name)
   local b = vim.b[name]
+  local g = vim.g[name]
   return _is_truthy(b) or _is_truthy(g)
 end
 
