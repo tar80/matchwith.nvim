@@ -5,13 +5,6 @@ local M = {}
 ---@alias LogLevels 'TRACE'|'DEBUG'|'INFO'|'WARN'|'ERROR'|'OFF'
 ---@alias UtfEncoding 'utf-8'|'utf-16'|'utf-32'
 
----@param name string
----@param message string
----@param errorlevel LogLevels
-function M.notify(name, message, errorlevel)
-  vim.notify(message, vim.log.levels[string.upper(errorlevel)], { title = name })
-end
-
 -- Get the current utf encoding
 ---@param encoding? string
 ---@return string encoding
@@ -54,15 +47,15 @@ function M.is_insert_mode(mode)
   return mode:find('^[i|R]') ~= nil
 end
 
----@param value any
----@return boolean
+---@param value string|integer
+---@return boolean|nil
 local function _is_truthy(value)
   return value and tonumber(value) ~= 0
 end
 
 ---Check the boolean value of user variables set locally/globally
 ---@param name string
----@return boolean
+---@return boolean|nil
 function M.is_enable_user_vars(name)
   local b = vim.b[name]
   local g = vim.g[name]

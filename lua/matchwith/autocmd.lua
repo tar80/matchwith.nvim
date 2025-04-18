@@ -1,7 +1,19 @@
 local M = {}
 local helper = require('matchwith.helper')
-local timer = require('matchwith.timer').set_timer()
 local matchwith = require('matchwith.core')
+local timer = require('matchwith.timer').set_timer()
+
+---@param Cache Cache
+---@return boolean
+local function _is_enable(Cache)
+  if Cache.disable == nil then
+    Cache.disable = helper.is_enable_user_vars('matchwith_disable')
+    if Cache.disable then
+      vim.api.nvim_buf_clear_namespace(0, Cache.ns, 0, -1)
+    end
+  end
+  return not Cache.disable
+end
 
 ---Setup autocommands
 ---@param UNIQUE_NAME string
@@ -13,13 +25,49 @@ function M.setup(UNIQUE_NAME, Cache)
     Cache:update_searchpairs()
   end
 
-  vim.api.nvim_create_autocmd({ 'CursorMoved', 'CursorMovedI' }, {
+  vim.api.nvim_create_autocmd({ 'CursorMoved' }, {
     desc = with_unique_name('%s: update matchpair drawing'),
     group = augroup,
     callback = function()
-      if not helper.is_enable_user_vars('matchwith_disable') then
+      if _is_enable(Cache) then
         timer.debounce(vim.g.matchwith_debounce_time, function()
           matchwith.matching()
+        end)
+      end
+    end,
+  })
+  vim.api.nvim_create_autocmd({ 'CursorMovedI' }, {
+    desc = with_unique_name('%s: update matchpair drawing'),
+    group = augroup,
+    callback = function()
+      if _is_enable(Cache) then
+        timer.debounce(vim.g.matchwith_debounce_time, function()
+          matchwith.matching(true)
+        end)
+      end
+    end,
+  })
+  vim.api.nvim_create_autocmd({ 'CursorHold' }, {
+    desc = with_unique_name('%s: reset disable matching'),
+    group = augroup,
+    callback = function()
+      Cache.disable = nil
+    end,
+  })
+  vim.api.nvim_create_autocmd({ 'WinScrolled' }, {
+    desc = with_unique_name('%s: reset disable matching'),
+    group = augroup,
+    callback = function(ev)
+      if _is_enable(Cache) and tonumber(ev.match) == Cache.winid then
+        timer.debounce(vim.g.matchwith_debounce_time, function()
+          local pos = vim.api.nvim_win_get_cursor(Cache.winid)
+          if pos[1] - 1 == Cache.cur_row and pos[2] == Cache.cur_col then
+            local session = matchwith:new()
+            session:draw_markers(Cache.last.scope)
+            session:draw_markers('parent')
+          else
+            matchwith.matching()
+          end
         end)
       end
     end,
@@ -28,19 +76,9 @@ function M.setup(UNIQUE_NAME, Cache)
     desc = with_unique_name('%s: update matchpair drawing'),
     group = augroup,
     callback = function(ev)
-      if not helper.is_enable_user_vars('matchwith_disable') then
-        local _is_insert_mode = ev.event == 'InsertEnter'
-        matchwith.matching(_is_insert_mode)
-        Cache.skip_matching = _is_insert_mode
-      end
-    end,
-  })
-  vim.api.nvim_create_autocmd('WinEnter', {
-    desc = with_unique_name('%s: update enable captures'),
-    group = augroup,
-    callback = function()
-      if not helper.is_enable_user_vars('matchwith_disable') then
-        Cache:update_captures()
+      if _is_enable(Cache) then
+        local is_insert_mode = ev.event == 'InsertEnter'
+        matchwith.matching(is_insert_mode)
       end
     end,
   })
@@ -48,12 +86,12 @@ function M.setup(UNIQUE_NAME, Cache)
     desc = with_unique_name('%s: update buffer configrations'),
     group = augroup,
     callback = function(ev)
-      if not helper.is_enable_user_vars('matchwith_disable') then
-        Cache.skip_matching = true
-        local _is_ignore_buftype = vim.tbl_contains(vim.g.matchwith_ignore_buftypes, vim.bo.buftype)
-        if _is_ignore_buftype then
+      Cache.disable = nil
+      if _is_enable(Cache) then
+        if vim.tbl_contains(vim.g.matchwith_ignore_buftypes, vim.bo.buftype) then
           vim.api.nvim_buf_set_var(ev.buf, 'matchwith_disable', true)
         else
+          Cache:update_captures()
           Cache:update_searchpairs()
         end
       end
@@ -71,9 +109,9 @@ function M.setup(UNIQUE_NAME, Cache)
     desc = with_unique_name('%s: settings for each filetype'),
     group = augroup,
     callback = function(ev)
-      if not vim.b.matchwith_disable then
-        local _is_ignore_fuletype = vim.tbl_contains(vim.g.matchwith_ignore_filetypes, ev.match)
-        if _is_ignore_fuletype then
+      if _is_enable(Cache) then
+        local is_ignore_fuletype = vim.tbl_contains(vim.g.matchwith_ignore_filetypes, ev.match)
+        if is_ignore_fuletype then
           vim.api.nvim_buf_set_var(ev.buf, 'matchwith_disable', true)
         else
           Cache:update_captures(ev.match)

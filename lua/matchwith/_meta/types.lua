@@ -43,7 +43,11 @@
 ---@field public extends integer
 ---@field public precedes integer
 ---@field public markers Markers
+---@field public winid integer
+---@field public cur_row integer
+---@field public cur_col integer
 ---@field public changetick integer
+---@field public disable boolean|nil
 ---@field public skip_matching boolean
 ---@field public last Last
 ---@field public setup fun(self:self,UNIQUE_NAME:string,hl:hl):self Initialize internal cache

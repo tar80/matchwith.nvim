@@ -506,15 +506,18 @@ function Matchwith.matching(is_insert_mode)
   end
 
   local Instance = Matchwith:new(is_insert_mode)
+  Cache.winid = Instance.winid
+  Cache.cur_row = Instance.cur_row
+  Cache.cur_col = Instance.cur_col
   if not Instance.language then
     return
   end
 
   if Instance.is_insert_mode and Instance.cur_col < 0 then
     if Cache.last.cur then
-      local clear = Instance:clear_extmarks('cur')
-      if clear then
-        Cache.last = { parent = Cache.last.parent }
+      local is_clear = Instance:clear_extmarks('cur')
+      if is_clear then
+        Cache.last.cur = nil
       end
     end
     return
@@ -588,7 +591,7 @@ function Matchwith.jumping()
       return
     end
   end
-  if vim.g.matchwith_disable or vim.b.matchwith_disable then
+  if helper.is_enable_user_vars('matchwith_disable') then
     vim.cmd.normal({ '%', bang = true })
     return
   end
@@ -612,6 +615,7 @@ function Matchwith.jumping()
     end
   end
   Cache.skip_matching = true
+  Cache.winid = nil --For skip WinScroll event
   Cache.last.is_start_point = not Cache.last.is_start_point
   local conditional_select = util.evaluated_condition(Cache.last.is_start_point, true)
   local range = conditional_select(last_range[1], last_range[2])
