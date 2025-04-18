@@ -57,7 +57,8 @@
 ---@field public update_wrap_marker fun(self:self)
 
 ---@class Instance
----@field public is_insert_mode boolean
+---@field public show_next boolean|nil
+---@field public show_parent boolean|nil
 ---@field public bufnr integer
 ---@field public winid integer
 ---@field public winwidth integer

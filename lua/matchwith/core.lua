@@ -33,6 +33,8 @@ end
 function Matchwith:new(is_insert_mode)
   ---@class Matchwith
   local Instance = setmetatable({}, self)
+  Instance['show_next'] = vim.g.matchwith_show_next
+  Instance['show_parent'] = vim.g.matchwith_show_parent
   Instance['is_insert_mode'] = is_insert_mode or helper.is_insert_mode()
   Instance['bufnr'] = vim.api.nvim_get_current_buf()
   Instance['winid'] = vim.api.nvim_get_current_win()
@@ -447,7 +449,7 @@ end
 ---@return boolean
 local function determine_start_point(scope, top, bottom)
   if scope ~= 'parent' then
-    return Cache.last.is_start_point
+    return Cache.cur_row ~= Cache.last[scope][2][3] and true or Cache.last.is_start_point
   end
   return top <= Cache.last.parent[1][1] and bottom < Cache.last.parent[2][3]
 end
@@ -538,7 +540,7 @@ function Matchwith.matching(is_insert_mode)
     Instance:verify_match()
   end
 
-  if vim.g.matchwith_show_parent then
+  if Instance.show_parent then
     if Instance.match.parent.node and not Instance.last.parent then
       if Instance.match.cur.node then
         local match_parent = Instance.match.cur.node:parent()
@@ -561,13 +563,16 @@ function Matchwith.matching(is_insert_mode)
       Cache.last.parent = Instance.last.parent
       Instance:draw_markers('parent')
     end
+  elseif Instance.show_parent == false then
+    vim.g.matchwith_show_parent = nil
+    Instance:clear_extmarks('parent')
   end
 
   if not Instance.match.cur.range and not Instance.last.scope then
     Instance:clear_extmarks(Cache.last.scope)
     Cache.last = Instance.last
     return
-  elseif not vim.g.matchwith_show_next then
+  elseif not Instance.show_next then
     Instance:clear_extmarks('cur')
   end
 
@@ -576,7 +581,7 @@ function Matchwith.matching(is_insert_mode)
   end
 
   Cache.last = Instance.last
-  if Instance.match.cur.at_cursor or vim.g.matchwith_show_next then
+  if Instance.match.cur.at_cursor or Instance.show_next then
     Instance:draw_markers(Cache.last.scope)
   end
 
@@ -625,11 +630,12 @@ function Matchwith.jumping()
   )
   local col = conditional_select(range[2], zerobase(range[4]))
   vim.api.nvim_win_set_cursor(0, { range[1] + 1, col })
-  local session = Matchwith:new(false)
+  local Instance = Matchwith:new(false)
   if not Cache.last.cur then
     Cache.last.cur = Cache.last.next
+    Instance:clear_extmarks('parent')
   end
-  session:draw_markers('cur')
+  Instance:draw_markers('cur')
 end
 
 return Matchwith
