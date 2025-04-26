@@ -2,14 +2,15 @@
 
 ---@alias hl {groups: HlGroups, details: {[hlGroups]:{fg:string,bg:string}}}
 ---@alias hlGroups matchwithHlgroups|treesitterCaptures
----@alias matchwithHlgroups 'Matchwith'|'MatchwithOut'|'MatchwithNext'|'MatchwithNextOut'|'MatchwithParent'|'MatchwithParentOut'|'MatchwithSign'
+---@alias matchwithHlgroups 'Matchwith'|'MatchwithOut'|'MatchwithNext'|'MatchwithNextOut'|'MatchwithParent'|'MatchwithParentOut'|'MatchwithSign'|'MatchwithWord'
 ---@alias treesitterCaptures '@keyword.matchwith.do'
----@alias hlKeys 'ON'|'OFF'|'NEXT_ON'|'NEXT_OFF'|'PARENT_ON'|'PARENT_OFF'|'SIGN'
+---@alias hlKeys 'ON'|'OFF'|'NEXT_ON'|'NEXT_OFF'|'PARENT_ON'|'PARENT_OFF'|'SIGN'|'WORD'|'KEYWORD_DO'
 ---@alias nodeScope 'cur'|'parent'|'next'
 -- prev_end_col is the end column of the capture before the cursor position within the cursor's row. 0 is assigned when no capture exists.
----@alias MatchItems {node_type:string,prev_end_col:integer,[nodeScope]:MatchItem}
+---@alias MatchItems {node_type:string,prev_end_col:integer,word:TSNode,[nodeScope]:MatchItem}
 ---@alias MatchItem {node:TSNode,range:Range4,ancestor_nodes:TSNode[],at_cursor?:boolean}
 ---@alias Last {cur?:LastMatch,next?:LastMatch,parent?:LastMatch,range:Range4,scope:nodeScope,is_start_point:boolean}
+---@alias LastWordRange Range4
 -- Node ranges and their paired node ranges retrieved in the last session.
 -- [1]:Markerd range, [2]:Paired range
 ---@alias LastMatch {[1]:Range4,[2]:Range4}
@@ -33,11 +34,13 @@
 ---@field public priority? integer
 ---@field public show_parent? boolean
 ---@field public show_next? boolean
+---@field public show_word? boolean
 ---@field public sign? boolean
 ---@field public symbols? table<string,string>
 
 ---@class Cache
 ---@field public ns integer
+---@field public ns_word integer
 ---@field public hlgroups {[hlKeys]:hlGroups}
 ---@field public hldetails {[hlGroups]: vim.api.keyset.highlight}
 ---@field public hl {[nodeScope]:{on:hlGroups,off:hlGroups}}
@@ -53,6 +56,7 @@
 ---@field public disable boolean|nil
 ---@field public skip_matching boolean
 ---@field public last Last
+---@field public last_word Range4
 ---@field public setup fun(self:self,UNIQUE_NAME:string,hl:hl):self Initialize internal cache
 ---@field public init fun(self:self)
 ---@field public update_captures fun(self:self,filetype?:string)
@@ -82,6 +86,7 @@
 ---@field public init_cache fun(cache:Cache) Initial cache table
 ---@field public clear_extmark fun(self:self,scope:nodeScope):boolean Clear the scope matchpairs
 ---@field public new fun(self:self,is_insert_mode?:boolean):Matchwith Setup new instance table
+---@field public search_cursor_word fun(self:self,tsroot:TSNode,queries:vim.treesitter.Query)
 ---@field public get_matches fun(self:self) Traverse the syntax tree
 ---@field public get_prev_end_col fun(self:self,scope:nodeScope):integer Get the ending column of the previous node
 ---@field public get_searchpairpos fun(self:self,searchpair_opts:string[],col?:integer):integer[] Get search result for searchpairpos

@@ -18,6 +18,7 @@ local DEFAULT_OPT = {
   priority = 100,
   show_next = false,
   show_parent = false,
+  show_word = false,
   sign = false,
   symbols = { [1] = '↑', [2] = '↓', [3] = '→', [4] = '↗', [5] = '↘', [6] = '←', [7] = '↖', [8] = '↙' },
 }
@@ -38,6 +39,7 @@ local HL_GROUPS = {
   PARENT_ON = 'MatchwithParent',
   PARENT_OFF = 'MatchwithParentOut',
   SIGN = 'MatchwithSign',
+  WORD = 'MatchwithWord',
   KEYWORD_DO = '@keyword.matchwith.do',
 }
 
@@ -64,6 +66,7 @@ local hl_details = {
   [HL_GROUPS.PARENT_ON] = { fg = on_fg, bold = true },
   [HL_GROUPS.PARENT_OFF] = { fg = off_fg, bold = true },
   [HL_GROUPS.SIGN] = { fg = on_fg, bold = true },
+  [HL_GROUPS.WORD] = { link = 'LspReferenceText' },
   [HL_GROUPS.KEYWORD_DO] = { link = '@keyword' },
 }
 
@@ -82,6 +85,7 @@ function M.set_options(opts)
   validate('priority', opts.priority, 'number', true)
   validate('show_parent', opts.show_parent, 'boolean', true)
   validate('show_next', opts.show_next, 'boolean', true)
+  validate('show_word', opts.show_word, 'boolean', true)
   validate('sign', opts.sign, 'boolean', true)
   validate('symbols', opts.symbols, 'table', true)
 
@@ -96,6 +100,7 @@ function M.set_options(opts)
   vim.g.matchwith_priority = opts.priority or DEFAULT_OPT.priority
   vim.g.matchwith_show_next = opts.show_next or DEFAULT_OPT.show_next
   vim.g.matchwith_show_parent = opts.show_parent or DEFAULT_OPT.show_parent
+  vim.g.matchwith_show_word = opts.show_word or DEFAULT_OPT.show_word
   vim.g.matchwith_symbols = opts.symbols or DEFAULT_OPT.symbols
   vim.g.matchwith_sign = opts.sign
   if opts.captures then

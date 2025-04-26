@@ -36,6 +36,7 @@ function Matchwith:new(is_insert_mode)
   local Instance = setmetatable({}, self)
   Instance['show_next'] = vim.g.matchwith_show_next
   Instance['show_parent'] = vim.g.matchwith_show_parent
+  Instance['show_word'] = vim.g.matchwith_show_word
   Instance['priority'] = vim.g.matchwith_priority
   Instance['is_insert_mode'] = is_insert_mode or helper.is_insert_mode()
   Instance['bufnr'] = vim.api.nvim_get_current_buf()
@@ -45,7 +46,7 @@ function Matchwith:new(is_insert_mode)
   Instance['leftcol'] = vim.fn.winsaveview().leftcol
   Instance['changetick'] = vim.api.nvim_buf_get_changedtick(Instance.bufnr)
   Instance['top_row'] = zerobase(vim.fn.line('w0'))
-  Instance['bottom_row'] = vim.fn.line('w$')
+  Instance['bottom_row'] = vim.fn.line('w$') - 1
   Instance['sentence'] = vim.api.nvim_get_current_line()
   Instance['line_length'] = math.max(0, zerobase(#Instance.sentence))
   Instance['match'] = { cur = {}, next = {}, parent = {} }
@@ -65,6 +66,48 @@ function Matchwith:new(is_insert_mode)
 end
 
 local _drop_node_type = { 'ERROR', 'chunk', 'code_fence_content', 'block_continuation' }
+
+function Matchwith:search_cursor_word(tsroot, queries)
+  if Cache.last_word and ts.is_contains(Cache.last_word, self.cur_row, self.cur_col) then
+    return
+  end
+  Cache.last_word = nil
+  if not self.match.word then
+    local _, _node = ts.get_node(tsroot, { self.cur_row, self.cur_col }, {})
+    if not _node then
+      return
+    end
+    self.match.word = _node
+  end
+  local words = {}
+  local node_text = ts.get_text_at_pos(self.bufnr, self.match.word, self.top_row, self.bottom_row)
+  local node_type = self.match.word:type()
+  if node_type ~= 'comment' and node_type ~= 'string' and node_type ~= node_text then
+    local iter_captures = queries:iter_captures(tsroot, self.bufnr, self.top_row, self.bottom_row, {
+      max_start_depth = vim.g.matchwith_depth_limit,
+    })
+    for _, node in iter_captures do
+      if
+        node:type() == node_type and ts.get_text_at_pos(self.bufnr, node, self.top_row, self.bottom_row) == node_text
+      then
+        table.insert(words, ts.range4(node))
+      end
+    end
+  end
+  if #words > 0 then
+    Cache.last_word = ts.range4(self.match.word)
+    vim.iter(words):each(function(range)
+      vim.api.nvim_buf_set_extmark(self.bufnr, Cache.word_ns, range[1], range[2], {
+        end_row = range[3],
+        end_col = range[4],
+        hl_group = Cache.hlgroups.WORD,
+        hl_mode = 'blend',
+        priority = self.priority,
+      })
+    end)
+  end
+end
+
 -- Get the smallest row range at the position
 ---@param node TSNode
 ---@param row integer
@@ -109,8 +152,8 @@ local function iterate_tree(instance, tsroot, queries)
         break
       end
       local capture = queries.captures[id]
-      if vim.tbl_contains(Cache.captures, capture) then
-        for _, node in ipairs(nodes) do
+      for _, node in ipairs(nodes) do
+        if vim.tbl_contains(Cache.captures, capture) then
           local tsrange = ts.range4(node)
           util.tbl_insert(classes, id, node)
           if tsrange[1] < instance.cur_row then
@@ -130,9 +173,10 @@ local function iterate_tree(instance, tsroot, queries)
               match.next = { node = node, range = tsrange, ancestor_nodes = classes[id] }
               break
             end
-          else
-            break
           end
+        elseif ts.is_contains(node, instance.cur_row, instance.cur_col) then
+          match.word = node
+          break
         end
       end
     end
@@ -169,6 +213,9 @@ function Matchwith:get_matches()
           _update_captures(queries)
           local match = iterate_tree(self, tsroot, queries)
           self.match = vim.tbl_deep_extend('force', self.match, match)
+          if self.show_word then
+            self:search_cursor_word(tsroot, queries)
+          end
         end
       end
     end)
@@ -308,6 +355,8 @@ function Matchwith:store_searchpairpos()
         local pair_row, pair_col = zerobase(pair_pos[1]), zerobase(pair_pos[2])
         local pair_range = position.to_range4(pair_row, pair_col)
         local is_start_point = is_searchpair_start_point(searchpair_opts)
+        local last_range = self.show_word and position.to_range4(self.cur_row, col)
+          or { self.cur_row, (self.match.prev_end_col or 0), self.cur_row, col }
         self.match[scope] = {
           at_cursor = scope == 'cur',
           is_start_point = is_start_point,
@@ -317,12 +366,13 @@ function Matchwith:store_searchpairpos()
           is_start_point = is_start_point,
           scope = scope,
           next = is_start_point and { self.match.next.range, pair_range } or { pair_range, self.match.next.range },
-          range = {
-            self.cur_row,
-            (self.match.prev_end_col or 0),
-            self.cur_row,
-            col,
-          },
+          range = last_range,
+          -- range = {
+          --   self.cur_row,
+          --   (self.match.prev_end_col or 0),
+          --   self.cur_row,
+          --   col,
+          -- },
         }
         return true
       end
@@ -367,12 +417,9 @@ end
 ---@return boolean, Range4[]
 local function get_ancestor_range(row, col, match)
   local is_next, match_ranges
-  -- local n = vim.treesitter.get_node()
   vim.iter(match.ancestor_nodes):find(function(node)
     local parent = node:parent()
     local node_range = ts.range4(parent)
-    -- local n1 = parent:child_with_descendant(n)
-    -- vim.print(parent:type(), n1:type(), { n1:range() })
     local _is_start_point = row == node_range[1]
     local node_type = parent:child(_is_start_point and 0 or ts.child_count(parent)):type()
     local parenthesis = get_parenthesis(node_type, _is_start_point)
@@ -413,6 +460,7 @@ function Matchwith:verify_match()
       local parenthesis, is_start_point = get_parenthesis(node_type, _is_start_point)
       if is_start_point or ts.is_contains(parent, self.cur_row, self.cur_col) then
         local is_next, match_ranges = get_match_ranges(parent, match.ancestor_nodes, parenthesis)
+        local last_range = self.show_word and position.to_range4(self.cur_row, self.cur_col) or next_range
         if is_next then
           next_range[4] = next_range[4] - 1
           self.last = {
@@ -420,7 +468,7 @@ function Matchwith:verify_match()
             scope = 'next',
             next = match_ranges,
             parent = util.value_or_nil(not is_start_point, match_ranges),
-            range = next_range,
+            range = last_range,
           }
         end
       end
@@ -562,22 +610,25 @@ function Matchwith.matching(is_insert_mode)
     return
   end
 
-  if Instance.is_insert_mode and Instance.cur_col < 0 then
-    if Cache.last.cur then
-      local is_clear = Instance:clear_extmarks('cur')
-      if is_clear then
-        Cache.last.cur = nil
+  if Instance.is_insert_mode then
+    if Instance.cur_col < 0 then
+      if Cache.last.cur then
+        local is_clear = Instance:clear_extmarks('cur')
+        if is_clear then
+          Cache.last.cur = nil
+        end
       end
+      return
     end
-    return
+    Instance.show_word = false
   end
 
   -- use cache
-  if
-    (Instance.changetick == Cache.changetick) and ts.is_contains(Cache.last.range, Instance.cur_row, Instance.cur_col)
-  then
+  local last_range = Instance.show_word and Cache.last_word or Cache.last.range
+  if (Instance.changetick == Cache.changetick) and ts.is_contains(last_range, Instance.cur_row, Instance.cur_col) then
     return
   end
+  vim.api.nvim_buf_clear_namespace(Instance.bufnr, Cache.word_ns, 0, -1)
 
   Instance:get_matches()
   Cache.changetick = Instance.changetick

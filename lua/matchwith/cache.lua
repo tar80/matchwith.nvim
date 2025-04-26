@@ -4,6 +4,7 @@ local helper = require('matchwith.helper')
 
 function M:setup(UNIQUE_NAME, hl)
   self.ns = vim.api.nvim_create_namespace(UNIQUE_NAME)
+  self.word_ns = vim.api.nvim_create_namespace(UNIQUE_NAME..'/show_word')
   self.hlgroups = hl.groups
   self.hldetails = hl.details
   self.hl = {
