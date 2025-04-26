@@ -1,4 +1,3 @@
----@meta helper
 ---@class helper
 local M = {}
 

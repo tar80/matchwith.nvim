@@ -35,7 +35,7 @@ function M.set_timer()
             running = false
           end)
         end
-        if current_time - last_call_time >= timeout then
+        if (current_time - last_call_time) >= timeout then
           last_call_time = current_time
           vim.schedule(callback)
         end

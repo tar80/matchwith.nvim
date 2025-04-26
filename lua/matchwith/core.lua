@@ -4,6 +4,7 @@ Matchwith.__index = Matchwith
 ---@class Cache
 local Cache = require('matchwith.cache')
 local helper = require('matchwith.helper')
+local position = require('matchwith.position')
 local render = require('matchwith.render')
 local ts = require('matchwith.treesitter')
 local util = require('matchwith.util')
@@ -22,7 +23,7 @@ local function zerobase(int)
 end
 
 function Matchwith.clear_extmarks(self, scope)
-  if scope and not ts.is_range(self.cur_row, self.cur_col, Cache.last.range) then
+  if scope and not ts.is_contains(Cache.last.range, self.cur_row, self.cur_col) then
     vim.api.nvim_buf_del_extmark(self.bufnr, Cache.ns, Cache.markers[scope][1])
     vim.api.nvim_buf_del_extmark(self.bufnr, Cache.ns, Cache.markers[scope][2])
     return true
@@ -35,6 +36,7 @@ function Matchwith:new(is_insert_mode)
   local Instance = setmetatable({}, self)
   Instance['show_next'] = vim.g.matchwith_show_next
   Instance['show_parent'] = vim.g.matchwith_show_parent
+  Instance['priority'] = vim.g.matchwith_priority
   Instance['is_insert_mode'] = is_insert_mode or helper.is_insert_mode()
   Instance['bufnr'] = vim.api.nvim_get_current_buf()
   Instance['winid'] = vim.api.nvim_get_current_win()
@@ -43,7 +45,7 @@ function Matchwith:new(is_insert_mode)
   Instance['leftcol'] = vim.fn.winsaveview().leftcol
   Instance['changetick'] = vim.api.nvim_buf_get_changedtick(Instance.bufnr)
   Instance['top_row'] = zerobase(vim.fn.line('w0'))
-  Instance['bottom_row'] = zerobase(vim.fn.line('w$'))
+  Instance['bottom_row'] = vim.fn.line('w$')
   Instance['sentence'] = vim.api.nvim_get_current_line()
   Instance['line_length'] = math.max(0, zerobase(#Instance.sentence))
   Instance['match'] = { cur = {}, next = {}, parent = {} }
@@ -62,17 +64,46 @@ function Matchwith:new(is_insert_mode)
   return Instance
 end
 
+local _drop_node_type = { 'ERROR', 'chunk', 'code_fence_content', 'block_continuation' }
+-- Get the smallest row range at the position
+---@param node TSNode
+---@param row integer
+---@param col integer
+---@return integer start_row, string node_type
+local function _get_position_info(node, row, col)
+  local s = row
+  local node_type = ''
+  local descendant_node = ts.get_smallest_node_at_pos(node, { row, col }, false)
+  while descendant_node do
+    node_type = descendant_node:type()
+    if vim.tbl_contains(_drop_node_type, node_type) then
+      break
+    end
+    if node_type ~= 'body' then
+      local _s, _, _, _ = descendant_node:range()
+      if _s < s then
+        s = _s
+        break
+      end
+    end
+    descendant_node = descendant_node:parent()
+  end
+  return s, node_type
+end
+
 ---@param instance Matchwith
 ---@param tsroot TSNode
 ---@param queries vim.treesitter.Query
 ---@return table MatchItems
-local function iterate_langtree(instance, tsroot, queries)
+local function iterate_tree(instance, tsroot, queries)
+  local _start_row, _node_type = _get_position_info(tsroot, instance.cur_row, instance.cur_col)
   ---@type MatchItems, TSNode[], table<integer,TSNode[]>
-  local match, ancestor_nodes, classes = { cur = {}, next = {}, parent = {} }, {}, {}
-  local iter = queries:iter_matches(tsroot, instance.bufnr, instance.cur_row, instance.cur_row + 1, {
+  local match = { cur = {}, next = {}, parent = {}, node_type = _node_type }
+  local ancestors, classes = {}, {}
+  local iter_matches = queries:iter_matches(tsroot, instance.bufnr, _start_row, instance.cur_row + 1, {
     max_start_depth = vim.g.matchwith_depth_limit,
   })
-  for _, matches in iter do
+  for _, matches in iter_matches do
     for id, nodes in pairs(matches) do
       if not vim.tbl_isempty(match.next) then
         break
@@ -83,19 +114,19 @@ local function iterate_langtree(instance, tsroot, queries)
           local tsrange = ts.range4(node)
           util.tbl_insert(classes, id, node)
           if tsrange[1] < instance.cur_row then
-            match.parent = { node = node, range = tsrange, ancestor_nodes = ancestor_nodes }
-            table.insert(ancestor_nodes, 1, node)
+            match.parent = { node = node, range = tsrange, ancestor_nodes = ancestors }
+            table.insert(ancestors, 1, node)
           elseif tsrange[1] == instance.cur_row then
             if tsrange[2] <= instance.cur_col then
               if tsrange[3] == instance.cur_row and instance.cur_col < tsrange[4] then
                 match.cur = { node = node, range = tsrange, ancestor_nodes = classes[id], at_cursor = true }
+                match.node_type = node:type()
               else
-                match.parent = { node = node, range = tsrange, ancestor_nodes = ancestor_nodes }
-                table.insert(ancestor_nodes, 1, node)
+                match.parent = { node = node, range = tsrange, ancestor_nodes = ancestors }
                 match.prev_end_col = tsrange[4]
+                table.insert(ancestors, 1, node)
               end
             elseif vim.tbl_isempty(match.next) and not match.cur.at_cursor then
-              table.insert(ancestor_nodes, 1, node)
               match.next = { node = node, range = tsrange, ancestor_nodes = classes[id] }
               break
             end
@@ -109,21 +140,34 @@ local function iterate_langtree(instance, tsroot, queries)
   return match
 end
 
+---Update enable captures for filetype
+---@param queries vim.treesitter.Query
+local function _update_captures(queries)
+  if vim.tbl_isempty(Cache.captures) then
+    vim.iter(queries.captures):each(function(capture)
+      if vim.tbl_contains(vim.g.matchwith_captures, capture) then
+        table.insert(Cache.captures, capture)
+      end
+    end)
+  end
+end
+
 function Matchwith:get_matches()
   ---@type vim.treesitter.LanguageTree?
-  local parsers = ts.get_parsers(self)
-  if parsers then
-    parsers:for_each_tree(function(tstree, langtree)
-      local language = langtree:lang()
-      if language == 'markdown_inline' then
+  local root_lang_tree = ts.get_parser(self.bufnr, self.language, {})
+  if root_lang_tree then
+    root_lang_tree:for_each_tree(function(tree, ltree)
+      local language = ltree:lang()
+      if vim.tbl_contains(vim.g.matchwith_ignore_parsers, language) then
         return
       end
-      local tsroot = tstree:root()
+      local tsroot = tree:root()
       local root_range = ts.range4(tsroot)
       if root_range[1] <= self.cur_row and self.cur_row <= root_range[3] then
         local queries = ts.get_highlights_query(language)
         if queries then
-          local match = iterate_langtree(self, tsroot, queries)
+          _update_captures(queries)
+          local match = iterate_tree(self, tsroot, queries)
           self.match = vim.tbl_deep_extend('force', self.match, match)
         end
       end
@@ -185,7 +229,7 @@ local function find_sibling(is_start_point, parent, ancestors, bracket)
       if not node then
         return
       end
-      for _, ancestor_node in ipairs(ancestors) do
+      for _, ancestor_node in ipairs(ancestors or {}) do
         if ancestor_node == node then
           return ts.range4(node)
         end
@@ -228,7 +272,7 @@ end
 
 function Matchwith:get_searchpairpos(searchpair_opts, col)
   local pair_pos = { 0, 0 }
-  if not ts.is_capture_at_pos('string', self.cur_row, col + 1) then
+  if not (self.match.node_type and self.match.node_type:find('string', 1, true)) then
     local row, actual_col, search_col = self.cur_row + 1, self.cur_col + 1, col
     local saveview = vim.fn.winsaveview()
     vim.api.nvim_win_set_cursor(self.winid, { row, search_col })
@@ -240,34 +284,34 @@ function Matchwith:get_searchpairpos(searchpair_opts, col)
 end
 
 function Matchwith:store_searchpairpos()
-  local start_col = self.match.cur.range and self.match.cur.range[4] + 1 or self.cur_col + 1
-  local end_col = self.match.next.range and self.match.next.range[2] + 1 or self.line_length + 1
-  if (end_col - start_col) <= 0 and self.language ~= 'markdown' then
+  local start_col = self.match.cur.range and self.match.cur.range[4] or self.cur_col
+  local end_col = self.match.next.range and self.match.next.range[2] or self.line_length
+  if (end_col - start_col) <= 0 then
     return
   end
-  local text = self.sentence:sub(start_col, end_col)
+  local text = self.sentence:sub(start_col + 1, end_col)
   local searchpair
-  local shorter = end_col
+  local shorter = end_col + 1
   vim.iter(Cache.searchpairs.chrs):each(function(chr)
     local match_idx = text:find(chr, 1, true)
     if match_idx and match_idx < shorter then
-      searchpair, shorter = chr, match_idx
+      searchpair, shorter = chr, match_idx - 1
     end
   end)
   if searchpair then
     local searchpair_opts = Cache.searchpairs.matchpair[searchpair]
-    local col = start_col + shorter - 2
     if searchpair_opts then
-      local scope = shorter == 1 and 'cur' or 'next'
+      local col = start_col + shorter
+      local scope = shorter == 0 and 'cur' or 'next'
       local pair_pos = self:get_searchpairpos(searchpair_opts, col)
       if (pair_pos[1] + pair_pos[2]) ~= 0 then
         local pair_row, pair_col = zerobase(pair_pos[1]), zerobase(pair_pos[2])
-        local pair_range = { pair_row, pair_col, pair_row, pair_col + 1 }
+        local pair_range = position.to_range4(pair_row, pair_col)
         local is_start_point = is_searchpair_start_point(searchpair_opts)
         self.match[scope] = {
           at_cursor = scope == 'cur',
           is_start_point = is_start_point,
-          range = { self.cur_row, col, self.cur_row, col + 1 },
+          range = position.to_range4(self.cur_row, col),
         }
         self.last = {
           is_start_point = is_start_point,
@@ -323,17 +367,20 @@ end
 ---@return boolean, Range4[]
 local function get_ancestor_range(row, col, match)
   local is_next, match_ranges
+  -- local n = vim.treesitter.get_node()
   vim.iter(match.ancestor_nodes):find(function(node)
     local parent = node:parent()
     local node_range = ts.range4(parent)
+    -- local n1 = parent:child_with_descendant(n)
+    -- vim.print(parent:type(), n1:type(), { n1:range() })
     local _is_start_point = row == node_range[1]
     local node_type = parent:child(_is_start_point and 0 or ts.child_count(parent)):type()
     local parenthesis = get_parenthesis(node_type, _is_start_point)
-    if ts.is_range(row, col, node_range) then
+    if ts.is_contains(node_range, row, col) then
       is_next, match_ranges = get_match_ranges(parent, match.ancestor_nodes, parenthesis)
       if
         is_next
-        and ts.is_range(row, col, { match_ranges[1][1], match_ranges[1][2], match_ranges[2][3], match_ranges[2][4] })
+        and ts.is_contains({ match_ranges[1][1], match_ranges[1][2], match_ranges[2][3], match_ranges[2][4] }, row, col)
       then
         return true
       end
@@ -364,7 +411,7 @@ function Matchwith:verify_match()
       local node_range = ts.range4(parent)
       local _is_start_point = self.cur_row == node_range[1]
       local parenthesis, is_start_point = get_parenthesis(node_type, _is_start_point)
-      if is_start_point or ts.is_range(self.cur_row, self.cur_col, parent) then
+      if is_start_point or ts.is_contains(parent, self.cur_row, self.cur_col) then
         local is_next, match_ranges = get_match_ranges(parent, match.ancestor_nodes, parenthesis)
         if is_next then
           next_range[4] = next_range[4] - 1
@@ -479,7 +526,7 @@ function Matchwith:add_marker(id, hl_group, range, sign_options)
     id = id,
     end_col = range[4],
     hl_group = hl_group,
-    priority = vim.g.matchwith_priority,
+    priority = self.priority,
     strict = false,
   }
   if sign_options then
@@ -527,14 +574,13 @@ function Matchwith.matching(is_insert_mode)
 
   -- use cache
   if
-    (Instance.changetick == Cache.changetick) and ts.is_range(Instance.cur_row, Instance.cur_col, Cache.last.range)
+    (Instance.changetick == Cache.changetick) and ts.is_contains(Cache.last.range, Instance.cur_row, Instance.cur_col)
   then
-    -- vim.print({ '[matchwith] use cache ', { Instance.cur_row, Instance.cur_col }, Cache.last.range }) ---TODO: for test
     return
   end
 
-  Cache.changetick = Instance.changetick
   Instance:get_matches()
+  Cache.changetick = Instance.changetick
 
   if vim.tbl_isempty(Instance.match.cur) then
     Instance:verify_match()

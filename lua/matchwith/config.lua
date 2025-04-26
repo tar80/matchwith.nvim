@@ -5,15 +5,16 @@ local DEFAULT_MATCH = 'MatchParen'
 local DEFAULT_MATCH_OUT = 'Error'
 local DEFAULT_OPT = {
   captures = {
-    ['*'] = { 'keyword.function', 'keyword.repeat', 'keyword.conditional', 'punctuation.bracket', 'constructor' },
-    off_side = { 'punctuation.bracket' },
+    ['*'] = { 'tag.delimiter', 'punctuation.bracket' },
+    lua = { 'keyword.function', 'keyword.repeat', 'keyword.conditional', 'punctuation.bracket', 'constructor' },
+    vim = { 'keyword.function', 'keyword.repeat', 'keyword.conditional', 'punctuation.bracket', 'constructor', 'keyword.exception' },
   },
   debounce_time = 50,
   depth_limit = 10,
   ignore_filetypes = { 'vimdoc' },
   ignore_buftypes = { 'nofile' },
+  ignore_parsers = { 'markdown' },
   indicator = 0,
-  off_side = { 'query', 'fsharp', 'haskell', 'ocaml', 'make', 'nim', 'python', 'sass', 'scss', 'yaml' },
   priority = 100,
   show_next = false,
   show_parent = false,
@@ -37,6 +38,7 @@ local HL_GROUPS = {
   PARENT_ON = 'MatchwithParent',
   PARENT_OFF = 'MatchwithParentOut',
   SIGN = 'MatchwithSign',
+  KEYWORD_DO = '@keyword.matchwith.do',
 }
 
 ---@param name string
@@ -62,6 +64,7 @@ local hl_details = {
   [HL_GROUPS.PARENT_ON] = { fg = on_fg, bold = true },
   [HL_GROUPS.PARENT_OFF] = { fg = off_fg, bold = true },
   [HL_GROUPS.SIGN] = { fg = on_fg, bold = true },
+  [HL_GROUPS.KEYWORD_DO] = { link = '@keyword' },
 }
 
 ---@param opts Options User specified options
@@ -73,9 +76,9 @@ function M.set_options(opts)
   validate('debounce_time', opts.debounce_time, 'number', true)
   validate('ignore_buftypes', opts.ignore_buftypes, 'table', true)
   validate('ignore_filetypes', opts.ignore_filetypes, 'table', true)
+  validate('ignore_parsers', opts.ignore_parsers, 'table', true)
   validate('indicator', opts.indicator, 'number', true)
   validate('jump_key', opts.jump_key, 'string', true)
-  validate('off_side', opts.off_side, 'table', true)
   validate('priority', opts.priority, 'number', true)
   validate('show_parent', opts.show_parent, 'boolean', true)
   validate('show_next', opts.show_next, 'boolean', true)
@@ -88,12 +91,13 @@ function M.set_options(opts)
   vim.g.matchwith_depth_limit = (opts.depth_limit or DEFAULT_OPT.depth_limit) * 2
   vim.g.matchwith_ignore_buftypes = DEFAULT_OPT.ignore_buftypes
   vim.g.matchwith_ignore_filetypes = DEFAULT_OPT.ignore_filetypes
+  vim.g.matchwith_ignore_parsers = DEFAULT_OPT.ignore_parsers
   vim.g.matchwith_indicator = opts.indicator or DEFAULT_OPT.indicator
-  vim.g.matchwith_off_side = opts.off_side or DEFAULT_OPT.off_side
   vim.g.matchwith_priority = opts.priority or DEFAULT_OPT.priority
   vim.g.matchwith_show_next = opts.show_next or DEFAULT_OPT.show_next
   vim.g.matchwith_show_parent = opts.show_parent or DEFAULT_OPT.show_parent
   vim.g.matchwith_symbols = opts.symbols or DEFAULT_OPT.symbols
+  vim.g.matchwith_sign = opts.sign
   if opts.captures then
     if vim.islist(opts.captures) then
       opts.captures = { ['*'] = opts.captures }
@@ -107,7 +111,7 @@ function M.set_options(opts)
   end
   vim.g.matchwith_ignore_buftypes = vim.list_extend(vim.g.matchwith_ignore_buftypes, opts.ignore_buftypes or {})
   vim.g.matchwith_ignore_filetypes = vim.list_extend(vim.g.matchwith_ignore_filetypes, opts.ignore_filetypes or {})
-  vim.g.matchwith_off_side = vim.list_extend(vim.g.matchwith_off_side, opts.off_side or {})
+  vim.g.matchwith_ignore_parsers = vim.list_extend(vim.g.matchwith_ignore_parsers, opts.ignore_parsers or {})
   ---@diagnostic disable-next-line: undefined-field
   if opts.alter_filetypes then
     vim.notify_once(
@@ -116,8 +120,13 @@ function M.set_options(opts)
       {}
     )
   end
-  if opts.sign then
-    vim.g.matchwith_sign = true
+  ---@diagnostic disable-next-line: undefined-field
+  if opts.off_side then
+    vim.notify_once(
+      [=[matchwith.nvim: The opts.off_side is no longer available. Addressed in default rules.]=],
+      vim.log.levels.INFO,
+      {}
+    )
   end
   return { groups = HL_GROUPS, details = hl_details }
 end

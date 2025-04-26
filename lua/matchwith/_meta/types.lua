@@ -1,11 +1,13 @@
 ---@meta
 
 ---@alias hl {groups: HlGroups, details: {[hlGroups]:{fg:string,bg:string}}}
----@alias hlGroups 'Matchwith'|'MatchwithOut'|'MatchwithNext'|'MatchwithNextOut'|'MatchwithParent'|'MatchwithParentOut'|'MatchwithSign'
+---@alias hlGroups matchwithHlgroups|treesitterCaptures
+---@alias matchwithHlgroups 'Matchwith'|'MatchwithOut'|'MatchwithNext'|'MatchwithNextOut'|'MatchwithParent'|'MatchwithParentOut'|'MatchwithSign'
+---@alias treesitterCaptures '@keyword.matchwith.do'
 ---@alias hlKeys 'ON'|'OFF'|'NEXT_ON'|'NEXT_OFF'|'PARENT_ON'|'PARENT_OFF'|'SIGN'
 ---@alias nodeScope 'cur'|'parent'|'next'
 -- prev_end_col is the end column of the capture before the cursor position within the cursor's row. 0 is assigned when no capture exists.
----@alias MatchItems {prev_end_col:integer,[nodeScope]:MatchItem}
+---@alias MatchItems {node_type:string,prev_end_col:integer,[nodeScope]:MatchItem}
 ---@alias MatchItem {node:TSNode,range:Range4,ancestor_nodes:TSNode[],at_cursor?:boolean}
 ---@alias Last {cur?:LastMatch,next?:LastMatch,parent?:LastMatch,range:Range4,scope:nodeScope,is_start_point:boolean}
 -- Node ranges and their paired node ranges retrieved in the last session.
@@ -24,6 +26,7 @@
 ---@field public depth_limit? integer
 ---@field public ignore_buftypes? string[]
 ---@field public ignore_filetypes? string[]
+---@field public ignore_parsers? string[]
 ---@field public indicator? integer
 ---@field public jump_key? string
 ---@field public off_side? string[]

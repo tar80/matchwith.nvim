@@ -2,6 +2,20 @@ local M = {}
 
 local ts = vim.treesitter
 
+---@param range Range
+---@return Range4
+local function _convert_range4(range)
+  local len = #range
+  if len == 6 then
+    table.remove(range, 6)
+    table.remove(range, 5)
+  elseif len == 2 then
+    range = { range[1], range[2], range[1], range[2] + 1 }
+  end
+  ---@cast range Range4
+  return range
+end
+
 ---@param filetype string
 ---@return string|nil Language-parser-name
 function M.get_language(filetype)
@@ -33,7 +47,7 @@ end
 ---@param col integer
 ---@param range Range4|TSNode
 ---@return boolean
-function M.is_range(row, col, range)
+function M.is_contains(range, row, col)
   if type(range) == 'userdata' then
     range = M.range4(range)
   elseif type(range) ~= 'table' then
@@ -51,58 +65,59 @@ function M.node_contains(range1, range2)
   return ts._range.contains(range1, range2)
 end
 
--- Get the treesitter's language tree parser
----@param instance Instance Matchwith current session
-function M.get_parsers(instance)
-  ---@type vim.treesitter.LanguageTree?
-  return ts._get_parser and ts._get_parser(instance.bufnr, instance.language)
-    or ts.get_parser(instance.bufnr, instance.language, { error = false })
+-- Get the parser for a specific buffer and attaches it to the buffer
+---@param bufnr integer
+---@param lang string Language parse name
+---@param opts table?
+---@return vim.treesitter.LanguageTree?
+function M.get_parser(bufnr, lang, opts)
+  opts = vim.tbl_deep_extend('force', opts, { error = false })
+  return ts.get_parser(bufnr, lang, opts)
 end
 
----@param name string
----@param row integer
----@param col integer
----@return true?
-function M.is_capture_at_pos(name, row, col)
-  local bufnr = vim.api.nvim_get_current_buf()
-  local buf_highlighter = ts.highlighter.active[bufnr]
-  if not buf_highlighter then
-    -- local syntax_name = vim.fn.synIDattr(vim.fn.synID(row, col + 1, 1), 'name')
-    -- return syntax_name:find('string', 1, true) and true
-    return
+-- Get the smallest named node at the position
+---@param root vim.treesitter.LanguageTree|TSNode
+---@param range Range
+---@param opts vim.treesitter.LanguageTree.tree_for_range.Opts
+---@return TSTree?,TSNode?
+function M.get_node(root, range, opts)
+  range = _convert_range4(range)
+  if root.lang then
+    local tree = root:tree_for_range(range, opts)
+    if tree then
+      return tree, tree:root():named_descendant_for_range(unpack(range))
+    end
+  elseif type(root) == 'userdata' then
+    return nil, root:named_descendant_for_range(unpack(range))
   end
-  local has_capture
-  buf_highlighter.tree:for_each_tree(function(tstree, tree)
-    if not tstree then
-      return
-    end
-    local language = tree:lang()
-    if language == 'markdown_inline' then
-      return
-    end
-    local root = tstree:root()
-    local root_start_row, _, root_end_row, _ = root:range()
-    -- Only worry about trees within the line range
-    if root_start_row > row or root_end_row < row then
-      return
-    end
-    local q = buf_highlighter:get_query(language)
-    -- Some injected languages may not have highlight queries.
-    if not q:query() then
-      return
-    end
-    local iter = q:query():iter_captures(root, buf_highlighter.bufnr, row, row + 1)
-    for id, node in iter do
-      if ts.is_in_node_range(node, row, col) then
-        ---@diagnostic disable-next-line: invisible
-        local capture = q._query.captures[id] -- name of the capture in the query
-        if capture:find(name, 1, true) then
-          has_capture = true
-        end
-      end
-    end
-  end)
-  return has_capture
+end
+
+-- Get the smallest node at the position
+---@param tsroot TSNode
+---@param range Range
+---@param anonymous? boolean
+---@return TSNode?,TSNode?
+function M.get_smallest_node_at_pos(tsroot, range, anonymous)
+  range = _convert_range4(range)
+  return anonymous and tsroot:descendant_for_range(unpack(range)) or tsroot:named_descendant_for_range(unpack(range))
+end
+
+---Get the text at the position
+---@param bufnr integer
+---@param node TSNode
+---@param top? integer
+---@param bottom? integer
+---@return string
+function M.get_text_at_pos(bufnr, node, top, bottom)
+  local s_row, s_col, e_row, e_col = node:range()
+  if top then
+    s_row = math.max(top, s_row)
+  end
+  if bottom then
+    e_row = math.min(bottom, e_row)
+  end
+  local lines = vim.api.nvim_buf_get_text(bufnr, s_row, s_col, e_row, e_col, {})
+  return table.concat(lines, '\n')
 end
 
 return M

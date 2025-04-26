@@ -1,4 +1,3 @@
----@meta util
 ---@class util
 local M = {}
 
@@ -20,7 +19,7 @@ function M.name_formatter(name)
   end
 end
 
----@alias valueType "number"|"string"|"boolean"|"table"|"function"|"thread"|"userdata"
+---@alias valueType "string"|number|boolean|table|function|thread|userdata
 -- A closure function that returns one of the two arguments based on the type of `value` determined in advance.
 ---@param value any The value to be evaluated.
 ---@param validator valueType The type to compare against.

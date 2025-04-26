@@ -34,12 +34,9 @@ function M:update_captures(filetype)
   filetype = filetype or vim.api.nvim_get_option_value('filetype', {})
   local language = vim.treesitter.language.get_lang(filetype)
   local lang_captures = vim.g.matchwith_captures
-  local off_side = vim.g.matchwith_off_side
   local match_captures = lang_captures[language]
   if match_captures then
     self.captures = match_captures
-  elseif vim.tbl_contains(off_side, language, {}) then
-    self.captures = lang_captures['off_side']
   else
     self.captures = lang_captures['*']
   end
