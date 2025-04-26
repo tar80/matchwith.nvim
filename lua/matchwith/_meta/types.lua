@@ -3,7 +3,7 @@
 ---@alias hl {groups: HlGroups, details: {[hlGroups]:{fg:string,bg:string}}}
 ---@alias hlGroups matchwithHlgroups|treesitterCaptures
 ---@alias matchwithHlgroups 'Matchwith'|'MatchwithOut'|'MatchwithNext'|'MatchwithNextOut'|'MatchwithParent'|'MatchwithParentOut'|'MatchwithSign'
----@alias treesitterCaptures '@keyword.matchwith.do'
+---@alias treesitterCaptures '@keyword.do.matchwith'
 ---@alias hlKeys 'ON'|'OFF'|'NEXT_ON'|'NEXT_OFF'|'PARENT_ON'|'PARENT_OFF'|'SIGN'
 ---@alias nodeScope 'cur'|'parent'|'next'
 -- prev_end_col is the end column of the capture before the cursor position within the cursor's row. 0 is assigned when no capture exists.

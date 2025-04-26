@@ -44,7 +44,7 @@ Defalut values.
 require('matchwith').setup({
     captures = {
         ['*'] = { 'tag.delimiter', 'punctuation.bracket' },
-        lua = { 'keyword.function', 'keyword.repeat', 'keyword.conditional', 'punctuation.bracket', 'constructor' },
+        lua = { 'keyword.function', 'keyword.repeat', 'keyword.conditional', 'keyword.do.matchwith', 'punctuation.bracket', 'constructor' },
         vim = { 'keyword.function', 'keyword.repeat', 'keyword.conditional', 'punctuation.bracket', 'constructor', 'keyword.exception' },
     },
     debounce_time = 50,

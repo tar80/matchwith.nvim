@@ -252,9 +252,9 @@ HLGROUP                                                      *matchwith-hlgroup*
 
         Used for symbols displayed in signcolumn
 
-*@keyword.matchwith.do*
+*@keyword.do.matchwith
 
-        Used for Treesitter node do_statement highlight
+        Used for Treesitter node |do_statement| highlight
 
         NOTE:
         |do_statement| is originally set to `@keyword` in luascript.

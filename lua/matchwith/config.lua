@@ -6,7 +6,14 @@ local DEFAULT_MATCH_OUT = 'Error'
 local DEFAULT_OPT = {
   captures = {
     ['*'] = { 'tag.delimiter', 'punctuation.bracket' },
-    lua = { 'keyword.function', 'keyword.repeat', 'keyword.conditional', 'punctuation.bracket', 'constructor' },
+    lua = {
+      'keyword.function',
+      'keyword.repeat',
+      'keyword.conditional',
+      'keyword.do.matchwith',
+      'punctuation.bracket',
+      'constructor',
+    },
     vim = {
       'keyword.function',
       'keyword.repeat',
