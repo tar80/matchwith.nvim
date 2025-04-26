@@ -7,7 +7,14 @@ local DEFAULT_OPT = {
   captures = {
     ['*'] = { 'tag.delimiter', 'punctuation.bracket' },
     lua = { 'keyword.function', 'keyword.repeat', 'keyword.conditional', 'punctuation.bracket', 'constructor' },
-    vim = { 'keyword.function', 'keyword.repeat', 'keyword.conditional', 'punctuation.bracket', 'constructor', 'keyword.exception' },
+    vim = {
+      'keyword.function',
+      'keyword.repeat',
+      'keyword.conditional',
+      'punctuation.bracket',
+      'constructor',
+      'keyword.exception',
+    },
   },
   debounce_time = 50,
   depth_limit = 10,

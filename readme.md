@@ -36,7 +36,9 @@ Highlight the next capture match and parent node match.
 ## Configuration
 
 Defalut values.  
-The `off_side` option is no longer needed.
+
+> [!CAUTION]
+> The `off_side` option is no longer needed.
 
 ```lua
 require('matchwith').setup({

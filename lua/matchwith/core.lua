@@ -45,7 +45,7 @@ function Matchwith:new(is_insert_mode)
   Instance['leftcol'] = vim.fn.winsaveview().leftcol
   Instance['changetick'] = vim.api.nvim_buf_get_changedtick(Instance.bufnr)
   Instance['top_row'] = zerobase(vim.fn.line('w0'))
-  Instance['bottom_row'] = vim.fn.line('w$')
+  Instance['bottom_row'] = zerobase(vim.fn.line('w$'))
   Instance['sentence'] = vim.api.nvim_get_current_line()
   Instance['line_length'] = math.max(0, zerobase(#Instance.sentence))
   Instance['match'] = { cur = {}, next = {}, parent = {} }
