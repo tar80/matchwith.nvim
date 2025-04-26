@@ -35,44 +35,29 @@ Highlight the next capture match and parent node match.
 
 ## Configuration
 
-Defalut values.
+Defalut values.  
+The `off_side` option is no longer needed.
 
 ```lua
 require('matchwith').setup({
     captures = {
-        ['*'] = { 'keyword.function', 'keyword.repeat', 'keyword.conditional', 'punctuation.bracket', 'constructor' },
-        off_side = { 'punctuation.bracket' },
+        ['*'] = { 'tag.delimiter', 'punctuation.bracket' },
+        lua = { 'keyword.function', 'keyword.repeat', 'keyword.conditional', 'punctuation.bracket', 'constructor' },
+        vim = { 'keyword.function', 'keyword.repeat', 'keyword.conditional', 'punctuation.bracket', 'constructor', 'keyword.exception' },
     },
     debounce_time = 50,
     depth_limit = 10,
     ignore_buftypes = { 'nofile' },
     ignore_filetypes = { 'vimdoc' }, -- Suggested items: 'TelescopePrompt', 'TelescopeResults', 'cmp_menu', 'cmp_docs' ,'fidget', 'snacks_picker_input'
+    ignore_parsers = { 'markdown' },
     indicator = 0,
     jump_key = nil, -- e.g. '%'
-    off_side = { 'query', 'fsharp', 'haskell', 'ocaml', 'make', 'nim', 'python', 'sass', 'scss', 'yaml' },
     priority = 100,
     show_next = false,
     show_parent = false,
     sign = false,
     symbols = { [1] = '↑', [2] = '↓', [3] = '→', [4] = '↗', [5] = '↘', [6] = '←', [7] = '↖', [8] = '↙' },
 })
-```
-
-To properly handle HTML and other framework-specific elements,  
-consider adding the following options.
-
-> [!NOTE]
-> `opts.alter_filetypes` is no longer available. The parser used is automatically determined.
-
-```lua
-opts = {
-  alter_filetypes -- @deprecated
-  captures = {
-    javascript = { 'tag.delimiter', 'punctuation.bracket' 'keyword.function', 'keyword.repeat', 'keyword.conditional' },
-    html = { 'tag.delimiter', 'punctuation.bracket' },
-    svelte = { 'tag.delimiter', 'punctuation.bracket' },
-  }
-},
 ```
 
 ### Operator keys

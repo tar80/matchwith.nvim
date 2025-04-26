@@ -39,9 +39,9 @@ VARIABLES                                                   *matchwith-variable*
 
         g:matchwith_ignore_buftypes                  |matchwith-ignore-buftypes|
 
-        g:matchwith_indicator                              |matchwith-indicator|
+        g:matchwith_ignore_parsers                    |matchwith-ignore-parsers|
 
-        g:matchwith_off_side                                |matchwith-off-side|
+        g:matchwith_indicator                              |matchwith-indicator|
 
         g:matchwith_priority                                |matchwith-priority|
 
@@ -65,10 +65,10 @@ setup({options})                                      *matchwith.config.setup()*
               {debounce_time}     (integer):                |matchwith-debounce|
               {depth_limit}       (integer):             |matchwith-depth-limit|
               {ignore_filetypes}  (boolean):        |matchwith-ignore-filetypes|
-              {ignore_buftypes}   (boolean):         |matchwith-ignoreibuftypes|
+              {ignore_buftypes}   (boolean):         |matchwith-ignore-buftypes|
+              {ignore_parsers}    (boolean):          |matchwith-ignore-parsers|
               {indicator}         (integer):               |matchwith-indicator|
               {jump_key}          (string):                  |matchwith-jumpkey|
-              {off_side}          (table):                  |matchwith-off-side|
               {priority}          (integer):                |matchwith-priority|
               {show_next}         (boolean):               |matchwith-show-next|
               {show_parent}       (boolean):             |matchwith-show_parent|
@@ -87,16 +87,22 @@ captures                                                    *matchwith-captures*
 
             Type: `table`
             Default: {
-                ["*"] = {
-                    "keyword.function",
-                    "keyword.repeat",
-                    "keyword.conditional",
-                    "punctuation.bracket",
-                    "constructor"
+                ['*'] = { 'tag.delimiter', 'punctuation.bracket' },
+                lua = {
+                    'keyword.function',
+                    'keyword.repeat',
+                    'keyword.conditional',
+                    'punctuation.bracket',
+                    'constructor'
                 },
-                off_side = {
-                    "punctuation.bracket"
-                }
+                vim = {
+                    'keyword.function',
+                    'keyword.repeat',
+                    'keyword.conditional',
+                    'punctuation.bracket',
+                    'constructor',
+                    'keyword.exception'
+                },
             }
 
 debounce_time                                               *matchwith-debounce*
@@ -127,6 +133,13 @@ ignore_buftypes                                      *matchwith-ignore-buftypes*
             Type: `table`
             Default: { "nofile" }
 
+ignore_parsers                                        *matchwith-ignore-parsers*
+
+        Specify parsers to suppress reading.
+
+            Type: `table`
+            Default: { "markdown" }
+
 jump_key                                                     *matchwith-jumpkey*
 
         Key to move cursor to the matched pair position.
@@ -142,25 +155,6 @@ indicator                                                  *matchwith-indicator*
 
             Type: `integer`
             Defalut: 0
-
-off_side                                                    *matchwith-off_side*
-
-        Specifies the file types to which off-side rules apply.
-        Specify the capture group within |matchwith-captures|.
-
-            Type: `table`
-            Defalut: {
-                'query',
-                'fsharp',
-                'haskell',
-                'ocaml',
-                'make',
-                'nim',
-                'python',
-                'sass',
-                'scss',
-                'yaml'
-             }
 
 priority                                                    *matchwith-priority*
 
@@ -258,6 +252,16 @@ HLGROUP                                                      *matchwith-hlgroup*
 
         Used for symbols displayed in signcolumn
 
+*@keyword.matchwith.do*
+
+        Used for Treesitter node do_statement highlight
+
+        NOTE:
+        |do_statement| is originally set to `@keyword` in luascript.
+        |matchwith.nvim| highlights by rewriting the query. If you want to
+        adjust highlighting for other languages, add language-specific
+        settings to `matchwith/queries`.
+
 ==============================================================================
 DEPRECATED                                                *matchwith-deprecated*
 
@@ -265,6 +269,11 @@ DEPRECATED                                                *matchwith-deprecated*
 
         This option allows you to specify an alternative parser name when
         the filetype and the actual parser name to be used differ.
+
+|off_side|
+
+        Specifies the file types to which off-side rules apply.
+        Specify the capture group within |matchwith-captures|.
 
 ==============================================================================
 vim:tw=78:sw=4:ts=8:ft=help:norl:noet:
