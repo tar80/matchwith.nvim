@@ -64,7 +64,9 @@ function M.setup(UNIQUE_NAME, Cache)
           if pos[1] - 1 == Cache.cur_row and pos[2] == Cache.cur_col then
             local session = matchwith:new()
             session:draw_markers(Cache.last.scope)
-            session:draw_markers('parent')
+            if vim.g.matchwith_show_parent then
+              session:draw_markers('parent')
+            end
           else
             matchwith.matching()
           end
