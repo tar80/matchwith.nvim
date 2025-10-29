@@ -29,7 +29,7 @@
 ---@field public ignore_parsers? string[]
 ---@field public indicator? integer
 ---@field public jump_key? string
----@field public off_side? string[]
+---@field public off_side? string[] @deprecated
 ---@field public priority? integer
 ---@field public show_parent? boolean
 ---@field public show_next? boolean

@@ -107,7 +107,7 @@ function M.setup(UNIQUE_NAME, Cache)
       Cache:init()
     end,
   })
-  vim.api.nvim_create_autocmd('Filetype', {
+  vim.api.nvim_create_autocmd('FileType', {
     desc = with_unique_name('%s: settings for each filetype'),
     buffer = vim.api.nvim_win_get_buf(0),
     group = augroup,
