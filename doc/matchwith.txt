@@ -115,9 +115,10 @@ debounce_time                                               *matchwith-debounce*
 depth_limit                                              *matchwith-depth-limit*
 
         Specifies the maximum start depth for each match of the syntax tree.
+        The actual limit value is twice the specified value.
 
             Type: `integer`
-            Default: 10
+            Default: 10 * 2
 
 ignore_filetypes                                    *matchwith-ignore-filetypes*
 
