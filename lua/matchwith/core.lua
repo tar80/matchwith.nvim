@@ -491,12 +491,13 @@ function Matchwith:pair_marker_direction(pair_range, is_start_point)
 end
 
 ---@param scope nodeScope
+---@param row integer
 ---@param top integer
 ---@param bottom integer
 ---@return boolean
-local function determine_start_point(scope, top, bottom)
+local function determine_start_point(scope, row, top, bottom)
   if scope ~= 'parent' then
-    return Cache.cur_row ~= Cache.last[scope][2][3] and true or Cache.last.is_start_point
+    return row ~= Cache.last[scope][2][3] and true or Cache.last.is_start_point
   end
   return top <= Cache.last.parent[1][1] and bottom < Cache.last.parent[2][3]
 end
@@ -505,7 +506,7 @@ function Matchwith:draw_markers(scope)
   if not Cache.last[scope] then
     return
   end
-  local is_start_point = determine_start_point(scope, self.top_row, self.bottom_row)
+  local is_start_point = determine_start_point(scope, self.cur_row, self.top_row, self.bottom_row)
   local start_range = Cache.last[scope][1]
   local end_range = Cache.last[scope][2]
   if not is_start_point then
