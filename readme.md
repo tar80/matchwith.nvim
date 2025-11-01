@@ -16,8 +16,6 @@ Highlight the next capture match and parent node match.
 
 ![show-nodes](https://github.com/user-attachments/assets/877c2f86-1964-4d97-b602-a04bb8c09f91)
 
-![word-highlight](https://github.com/user-attachments/assets/98c21311-3eae-40e8-a8d5-dce5bafb76b3)
-
 The `word_highlight` feature is a treesitter implementation of LSP reference highlighting.  
 This feature can have a significant impact on performance and is therefore implemented
 in the `word_highlight` branch.
@@ -28,6 +26,8 @@ in the `word_highlight` branch.
   `default: true`
 - `avoid_word_type`(string[]): Specifies nodes to be excluded.
   `default: { 'comment', 'string' }`
+
+![word-highlight](https://github.com/user-attachments/assets/220d2481-b27e-4114-82c0-a31cf917eadd)
 
 ## Requirements
 
