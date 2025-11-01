@@ -34,6 +34,8 @@ local DEFAULT_OPT = {
   show_parent = false,
   sign = false,
   symbols = { [1] = '↑', [2] = '↓', [3] = '→', [4] = '↗', [5] = '↘', [6] = '←', [7] = '↖', [8] = '↙' },
+  word_highlight = true,
+  avoid_word_type = { 'comment', 'string' },
 }
 
 ---@class HlGroups
@@ -44,6 +46,8 @@ local DEFAULT_OPT = {
 ---@field PARENT_ON 'MatchwithParent'
 ---@field PARENT_OFF 'MatchwithParentOut'
 ---@field SIGN 'MatchwithSign'
+---@field WORD 'MatchwithWord'
+---@field KEYWORD_DO '@keyword.do.matchwith'
 local HL_GROUPS = {
   ON = 'Matchwith',
   OFF = 'MatchwithOut',
@@ -52,7 +56,8 @@ local HL_GROUPS = {
   PARENT_ON = 'MatchwithParent',
   PARENT_OFF = 'MatchwithParentOut',
   SIGN = 'MatchwithSign',
-  KEYWORD_DO = '@keyword.matchwith.do',
+  WORD = 'MatchwithWord',
+  KEYWORD_DO = '@keyword.do.matchwith',
 }
 
 ---@param name string
@@ -78,6 +83,7 @@ local hl_details = {
   [HL_GROUPS.PARENT_ON] = { fg = on_fg, bold = true },
   [HL_GROUPS.PARENT_OFF] = { fg = off_fg, bold = true },
   [HL_GROUPS.SIGN] = { fg = on_fg, bold = true },
+  [HL_GROUPS.WORD] = { link = 'LspReferenceText' },
   [HL_GROUPS.KEYWORD_DO] = { link = '@keyword' },
 }
 
@@ -98,6 +104,8 @@ function M.set_options(opts)
   validate('show_next', opts.show_next, 'boolean', true)
   validate('sign', opts.sign, 'boolean', true)
   validate('symbols', opts.symbols, 'table', true)
+  validate('word_highlight', opts.word_highlight, 'boolean', true)
+  validate('avoid_word_type', opts.avoid_word_type, 'table', true)
 
   vim.g.loaded_matchwith = true
   vim.g.matchwith_captures = DEFAULT_OPT.captures
@@ -112,6 +120,8 @@ function M.set_options(opts)
   vim.g.matchwith_show_parent = opts.show_parent or DEFAULT_OPT.show_parent
   vim.g.matchwith_symbols = opts.symbols or DEFAULT_OPT.symbols
   vim.g.matchwith_sign = opts.sign
+  vim.g.matchwith_word_highlight = opts.word_highlight or DEFAULT_OPT.word_highlight
+  vim.g.matchwith_avoid_word_type = opts.avoid_word_type or DEFAULT_OPT.avoid_word_type
   if opts.captures then
     if vim.islist(opts.captures) then
       opts.captures = { ['*'] = opts.captures }
