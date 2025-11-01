@@ -53,6 +53,10 @@ VARIABLES                                                   *matchwith-variable*
 
         g:matchwith_symbols                                  |matchwith-symbols|
 
+        g:matchwith_word_highlight                    |matchwith-word-highlight|
+
+        g:matchwith_avod_word_type                   |matchwith-avoid-word-type|
+
 ------------------------------------------------------------------------------
 FUNCTION                                                    *matchwith-function*
 
@@ -201,6 +205,22 @@ symbols                                                      *matchwith-symbols*
                 [8] = '↙'
             }
 
+word_highlight                                        *matchwith-word-highlight*
+
+        (This feature is specific to the word_highlight branch.)
+        Enable/Disable word_highlight.
+
+            Type: `boolean`
+            Default: false
+
+avoid-word-type                                       *matchwith_avod_word_type*
+
+        (This feature is specific to the word_highlight branch.)
+        Specifies the treesitter node that is not subject to word_highlight.
+
+            Type: `table`
+            Default: { 'comment', 'string' }
+
 ------------------------------------------------------------------------------
 MAPPING                                                      *matchwith-mapping*
 
@@ -262,6 +282,11 @@ HLGROUP                                                      *matchwith-hlgroup*
         |matchwith.nvim| highlights by rewriting the query. If you want to
         adjust highlighting for other languages, add language-specific
         settings to `matchwith/queries`.
+
+*MatchwithWord*
+
+        Used for word-highlight
+        (Only valid in the word_highlight branch.)
 
 ==============================================================================
 DEPRECATED                                                *matchwith-deprecated*
