@@ -1,10 +1,10 @@
 # matchwith.nvim
 
-matchwith.nvim is a matchparen and matchit alternative plugin.  
+matchwith.nvim is an alternative plugin to matchparen and matchit.
 Provides simpler functionality using treesitter.
 
 > [!CAUTION]
-> We have confirmed some bugs and are currently working on fixing them.
+> We have identified some bugs and are actively working on resolving them.
 
 ## Features
 
@@ -15,6 +15,19 @@ Displays off-screen match symbols.
 Highlight the next capture match and parent node match.
 
 ![show-nodes](https://github.com/user-attachments/assets/877c2f86-1964-4d97-b602-a04bb8c09f91)
+
+![word-highlight](https://github.com/user-attachments/assets/98c21311-3eae-40e8-a8d5-dce5bafb76b3)
+
+The `word_highlight` feature is a treesitter implementation of LSP reference highlighting.  
+This feature can have a significant impact on performance and is therefore implemented
+in the `word_highlight` branch.
+
+**Option values**
+
+- `word_highlight`(boolean): Enable/Disable the feature.
+  `default: true`
+- `avoid_word_type`(string[]): Specifies nodes to be excluded.
+  `default: { 'comment', 'string' }`
 
 ## Requirements
 
