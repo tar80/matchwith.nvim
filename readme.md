@@ -37,7 +37,7 @@ in the `word_highlight` branch.
 
 - lazy.nvim
 
-```lua:
+```lua
 {
   'tar80/matchwith.nvim',
   opts = {
