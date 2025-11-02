@@ -111,10 +111,10 @@ end
 function M.get_text_at_pos(bufnr, node, top, bottom)
   local s_row, s_col, e_row, e_col = node:range()
   if top and top > s_row then
-    s_row, s_col = 0, 0
+    s_row, s_col = top, 0
   end
   if bottom and bottom < e_row then
-    e_row, e_col = bottom, vim.fn.col({ e_row, '$' })
+    e_row, e_col = bottom, vim.fn.col({ bottom + 1, '$' })
   end
   local lines = vim.api.nvim_buf_get_text(bufnr, s_row, s_col, e_row, e_col, {})
   return table.concat(lines, '\n')
