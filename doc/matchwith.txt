@@ -219,7 +219,13 @@ avoid-word-type                                       *matchwith_avod_word_type*
         Specifies the treesitter node that is not subject to word_highlight.
 
             Type: `table`
-            Default: { 'comment', 'string' }
+            Default: {
+                'comment',
+                'string',
+                'codeblock',
+                'heading',
+                'delimiter'
+            }
 
 ------------------------------------------------------------------------------
 MAPPING                                                      *matchwith-mapping*
