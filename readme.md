@@ -25,7 +25,7 @@ in the `word_highlight` branch.
 - `word_highlight`(boolean): Enable/Disable the feature.
   `default: true`
 - `avoid_word_type`(string[]): Specifies nodes to be excluded.
-  `default: { 'comment', 'string' }`
+  `default: { 'comment', 'string', 'codeblock', 'heading', 'delimiter' }`
 
 ![word-highlight](https://github.com/user-attachments/assets/220d2481-b27e-4114-82c0-a31cf917eadd)
 
