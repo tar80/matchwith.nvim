@@ -23,9 +23,9 @@ in the `word_highlight` branch.
 **Option values**
 
 - `word_highlight`(boolean): Enable/Disable the feature.
-  `default: true`
+  default: `true`
 - `avoid_word_type`(string[]): Specifies nodes to be excluded.
-  `default: { 'comment', 'string', 'codeblock', 'heading', 'delimiter' }`
+  default: `{ 'comment', 'string', 'codeblock', 'heading', 'delimiter' }`
 
 ![word-highlight](https://github.com/user-attachments/assets/220d2481-b27e-4114-82c0-a31cf917eadd)
 
@@ -72,6 +72,9 @@ require('matchwith').setup({
     show_parent = false,
     sign = false,
     symbols = { [1] = '↑', [2] = '↓', [3] = '→', [4] = '↗', [5] = '↘', [6] = '←', [7] = '↖', [8] = '↙' },
+    -- in word_highlight branch
+    word_highlight = true,
+    avoid_word_type = { 'comment', 'string', 'codeblock', 'heading', 'delimiter' }
 })
 ```
 
