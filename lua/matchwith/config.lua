@@ -35,7 +35,7 @@ local DEFAULT_OPT = {
   sign = false,
   symbols = { [1] = '↑', [2] = '↓', [3] = '→', [4] = '↗', [5] = '↘', [6] = '←', [7] = '↖', [8] = '↙' },
   word_highlight = true,
-  avoid_word_type = { 'comment', 'string' },
+  avoid_word_type = { 'comment', 'string','codeblock', 'heading', 'delimiter' },
 }
 
 ---@class HlGroups
