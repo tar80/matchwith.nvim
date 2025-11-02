@@ -207,8 +207,12 @@ function Matchwith:get_matches()
           _update_captures(queries)
           local match = iterate_tree(self, tsroot, queries)
           self.match = vim.tbl_deep_extend('force', self.match, match)
-          if self.word_highlight and match.word then
-            self:search_cursor_word(tsroot, queries)
+          if self.word_highlight then
+            if match.word then
+              self:search_cursor_word(tsroot, queries)
+            else
+              Cache.last_word = position.to_range4(self.cur_row, self.cur_col)
+            end
           end
         end
       end
