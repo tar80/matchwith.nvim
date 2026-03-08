@@ -644,7 +644,9 @@ function Matchwith.jumping()
     end
   end
   if helper.is_enable_user_vars('matchwith_disable') then
-    vim.cmd.normal({ '%', bang = true })
+    pcall(function()
+      vim.cmd.normal({ '%', bang = true })
+    end)
     return
   end
 
@@ -652,7 +654,9 @@ function Matchwith.jumping()
 
   if not last_range then
     if not Cache.last.parent then
-      vim.cmd.normal({ '%', bang = true })
+      pcall(function()
+        vim.cmd.normal({ '%', bang = true })
+      end)
       return
     end
     local pos = vim.api.nvim_win_get_cursor(0)

@@ -56,9 +56,12 @@ end
 ---@param name string
 ---@return boolean|nil
 function M.is_enable_user_vars(name)
-  local b = vim.b[name]
-  local g = vim.g[name]
-  return _is_truthy(b) or _is_truthy(g)
+  local b = _is_truthy(vim.b[name])
+  local g = _is_truthy(vim.g[name])
+  if b == false then
+    return g or b
+  end
+  return b or g
 end
 
 local function _value_converter(value)

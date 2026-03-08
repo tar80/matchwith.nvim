@@ -74,6 +74,15 @@ function M.setup(UNIQUE_NAME, Cache)
       end
     end,
   })
+  vim.api.nvim_create_autocmd('VimLeavePre', {
+    desc = with_unique_name('%s: close timer'),
+    group = augroup,
+    callback = function()
+      if timer and timer.close then
+        timer.close()
+      end
+    end,
+  })
   vim.api.nvim_create_autocmd({ 'InsertEnter', 'InsertLeave' }, {
     desc = with_unique_name('%s: update matchpair drawing'),
     group = augroup,
