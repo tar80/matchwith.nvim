@@ -1,4 +1,4 @@
-*matchwith.txt*                   Simple matchparen and matchit. With Treesitter
+*matchwith.txt* Simple matchparen and matchit with Treesitter
 
 Author: tar80 (https://github.com/tar80)
 License: Apache License
@@ -7,13 +7,12 @@ Repository: https://github.com/tar80/matchwith
 CONTENTS                                                    *matchwith-contents*
 
 Interface                                                  |matchwith-interface|
-  variable                                                  |matchwith-variable|
-  function                                                  |matchwith-function|
-  configuration                                        |matchwith-configuration|
-  mapping                                                    |matchwith-mapping|
-  hlgroup                                                    |matchwith-hlgroup|
-
-Deprecated                                                |matchwith-deprecated|
+  Variable                                                  |matchwith-variable|
+  Function                                                  |matchwith-function|
+  Configuration                                        |matchwith-configuration|
+  Mappings                                                   |matchwith-mapping|
+  Hlgroups                                                   |matchwith-hlgroup|
+  Deprecated                                              |matchwith-deprecated|
 
 ==============================================================================
 INTERFACE                                                  *matchwith-interface*
@@ -21,278 +20,237 @@ INTERFACE                                                  *matchwith-interface*
 ------------------------------------------------------------------------------
 VARIABLES                                                   *matchwith-variable*
 
-        g:matchwith_disable                                *g:matchwith_disable*
-                If this value is truthy, matchwith is globally disabled.
+g:matchwith_disable                                        *g:matchwith_disable*
+                If truthy, matchwith is globally disabled.
+                Default: nil
 
-        b:matchwith_disable                                *b:matchwith_disable*
-                If this value is truthy, matchwith disabled on that buffer.
+b:matchwith_disable                                        *b:matchwith_disable*
+                If truthy, matchwith is disabled for the current buffer.
+                Default: nil
 
-        g:matchwith_alter_filetypes                  |matchwith-alter-filetypes|
+g:matchwith_captures                                      *g:matchwith_captures*
+                Treesitter captures to be used for matching.
+                See |matchwith-captures-config| for details.
 
-        g:matchwith_captures                                |matchwith-captures|
+g:matchwith_debounce_time                            *g:matchwith_debounce_time*
+                Wait time (ms) before highlighting after cursor movement.
+                Default: 50
 
-        g:matchwith_debounce_time                           |matchwith-debounce|
+g:matchwith_depth_limit                                *g:matchwith_depth_limit*
+                Maximum search depth in the syntax tree.
+                Default: 20 (stored as 10 * 2)
 
-        g:matchwith_depth_limit                          |matchwith-depth-limit|
+g:matchwith_ignore_filetypes                      *g:matchwith_ignore_filetypes*
+                List of filetypes to ignore.
+                Default: { "vimdoc" }
 
-        g:matchwith_ignore_filetypes                |matchwith-ignore-filetypes|
+g:matchwith_ignore_buftypes                        *g:matchwith_ignore_buftypes*
+                List of buftypes to ignore.
+                Default: { "nofile" }
 
-        g:matchwith_ignore_buftypes                  |matchwith-ignore-buftypes|
+g:matchwith_ignore_parsers                          *g:matchwith_ignore_parsers*
+                List of Treesitter parsers to ignore.
+                Default: { "markdown" }
 
-        g:matchwith_ignore_parsers                    |matchwith-ignore-parsers|
+g:matchwith_indicator                                    *g:matchwith_indicator*
+                Time (ms) to display an indicator on markers when off-screen.
+                Default: 0
 
-        g:matchwith_indicator                              |matchwith-indicator|
+g:matchwith_priority                                      *g:matchwith_priority*
+                Highlight and sign priority.
+                Default: 100
 
-        g:matchwith_priority                                |matchwith-priority|
+g:matchwith_show_next                                    *g:matchwith_show_next*
+                Whether to highlight the next available match.
+                Default: false
 
-        g:matchwith_show_next                              |matchwith-show-next|
+g:matchwith_show_parent                                *g:matchwith_show_parent*
+                Whether to highlight the parent node match.
+                Default: false
 
-        g:matchwith_show_parent                          |matchwith-show-parent|
+g:matchwith_sign                                              *g:matchwith_sign*
+                Whether to show symbols in the sign column for off-screen
+                matches.
+                Default: false
 
-        g:matchwith_sign                                        |matchwith-sign|
+g:matchwith_symbols                                        *g:matchwith_symbols*
+                Table of symbols indicating off-screen directions.
+                See |matchwith-symbols-config|.
 
-        g:matchwith_symbols                                  |matchwith-symbols|
+g:matchwith_word_highlight                          *g:matchwith_word_highlight*
+                Enable/disable word highlighting (word_highlight branch only).
+                Default: false
 
-        g:matchwith_word_highlight                    |matchwith-word-highlight|
-
-        g:matchwith_avod_word_type                   |matchwith-avoid-word-type|
+g:matchwith_avoid_word_type                        *g:matchwith_avoid_word_type*
+                Nodes excluded from word highlight (word_highlight branch only).
 
 ------------------------------------------------------------------------------
 FUNCTION                                                    *matchwith-function*
 
 setup({options})                                      *matchwith.config.setup()*
+                Setup and initialize matchwith.nvim.
 
-        Setup matchwith.
-
-        Parameters: ~
-              {captures}          (table):                  |matchwith-captures|
-              {debounce_time}     (integer):                |matchwith-debounce|
-              {depth_limit}       (integer):             |matchwith-depth-limit|
-              {ignore_filetypes}  (boolean):        |matchwith-ignore-filetypes|
-              {ignore_buftypes}   (boolean):         |matchwith-ignore-buftypes|
-              {ignore_parsers}    (boolean):          |matchwith-ignore-parsers|
-              {indicator}         (integer):               |matchwith-indicator|
-              {jump_key}          (string):                  |matchwith-jumpkey|
-              {priority}          (integer):                |matchwith-priority|
-              {show_next}         (boolean):               |matchwith-show-next|
-              {show_parent}       (boolean):             |matchwith-show_parent|
-              {sign}              (boolean):                    |matchwith-sign|
-              {symbols}           (boolean):                 |matchwith-symbols|
+                Parameters: ~
+                See |matchwith-configuration| for all available {options}.
 
 ------------------------------------------------------------------------------
 CONFIGURATION                                          *matchwith-configuration*
 
-Default settings ~
+captures                                             *matchwith-captures-config*
 
-captures                                                    *matchwith-captures*
+                Captures to apply matchwith. "*" is the fallback for all
+                filetypes.
 
-        Captures to apply matchwith. off-side is a capture group applied to
-        the file type specified by |matchwith-off-side|.
-
-            Type: `table`
-            Default: {
-                ['*'] = { 'tag.delimiter', 'punctuation.bracket' },
-                lua = {
-                    'keyword.function',
-                    'keyword.repeat',
-                    'keyword.conditional',
-                    'punctuation.bracket',
-                    'constructor'
-                },
-                vim = {
-                    'keyword.function',
-                    'keyword.repeat',
-                    'keyword.conditional',
-                    'punctuation.bracket',
-                    'constructor',
-                    'keyword.exception'
-                },
-            }
-
+                        Type: `table`
+                        Default: >lua
+                       {
+                         ['*'] = { 'tag.delimiter', 'punctuation.bracket' },
+                         lua = { 'keyword.function', 'keyword.repeat',
+                                 'keyword.conditional', 'punctuation.bracket',
+                                 'constructor' },
+                         vim = { 'keyword.function', 'keyword.repeat',
+                                 'keyword.conditional', 'punctuation.bracket',
+                                 'constructor', 'keyword.exception' },
+                       }
+<
 debounce_time                                               *matchwith-debounce*
 
-        Wait time before highlighting after cursor movement.
+                Wait time before highlighting after cursor movement.
 
-            Type: `integer`
-            Default: 50
+                        Type: `integer`
+                        Default: 50
 
 depth_limit                                              *matchwith-depth-limit*
 
-        Specifies the maximum start depth for each match of the syntax tree.
-        The actual limit value is twice the specified value.
+                Specifies the maximum start depth for each match of the syntax
+                tree. The actual limit value is twice the specified value.
 
-            Type: `integer`
-            Default: 10 * 2
+                        Type: `integer`
+                        Default: 20 (10 * 2)
 
 ignore_filetypes                                    *matchwith-ignore-filetypes*
 
-        Filetypes that do not perform matchwith.
+                Filetypes that do not perform matchwith.
 
-            Type: `table`
-            Default: { "vimdoc" }
+                        Type: `table`
+                        Default: { "vimdoc" }
 
 ignore_buftypes                                      *matchwith-ignore-buftypes*
 
-        Buftypes that do not perform matchwith.
+                Buftypes that do not perform matchwith.
 
-            Type: `table`
-            Default: { "nofile" }
+                        Type: `table`
+                        Default: { "nofile" }
 
 ignore_parsers                                        *matchwith-ignore-parsers*
 
-        Specify parsers to suppress reading.
+                Specify parsers to suppress reading.
 
-            Type: `table`
-            Default: { "markdown" }
+                        Type: `table`
+                        Default: { "markdown" }
 
 jump_key                                                     *matchwith-jumpkey*
 
-        Key to move cursor to the matched pair position.
+                Key to jump between matched pairs.
 
-            Type: `string`
-            Default: nil
+                        Type: `string`
+                        Default: nil (e.g., set to "%")
 
 indicator                                                  *matchwith-indicator*
 
-        If match is off-screen. Number of milliseconds to display indicator on
-        marker. For example, if the cursor has a box shape, the highlight of
-        the bracket under the cursor is unknown, so an indicator is displayed.
+                If match is off-screen. Number of milliseconds to display
+                indicator on marker. For example, if the cursor has a box
+                shape, the highlight of the bracket under the cursor is
+                unknown, so an indicator is displayed.
 
-            Type: `integer`
-            Defalut: 0
+                        Type: `integer`
+                        Default: 0
 
 priority                                                    *matchwith-priority*
 
-        Marker and sign priority.
+                Marker and sign priority.
 
-            Type: `integer`
-            Defalut: 100
+                        Type: `integer`
+                        Default: 100
 
 show_next                                                  *matchwith-show-next*
 
-        Highlight the next capture match.
+                Highlight the next capture match.
 
-            Type: `boolean`
-            Default: false
+                        Type: `boolean`
+                        Default: false
 
 show_parent                                              *matchwith-show-parent*
 
-        Highlight the parent node match.
+                Highlight the parent node match.
 
-            Type: `boolean`
-            Default: false
+                        Type: `boolean`
+                        Default: false
 
 sign                                                            *matchwith-sign*
 
-        If match is off-screen. Display a symbol in signcolumn.
+                If match is off-screen. Display a symbol in signcolumn.
 
-            Type: `boolean`
-            Default: false
+                        Type: `boolean`
+                        Default: false
 
-symbols                                                      *matchwith-symbols*
+symbols                                               *matchwith-symbols-config*
 
-        Symbols indicate the direction of the off-screen matched pair.
+                Directional symbols for off-screen matches.
 
-            Type: `table`
-            Default: {
-                [1] = '↑',
-                [2] = '↓',
-                [3] = '→',
-                [4] = '↗',
-                [5] = '↘',
-                [6] = '←',
-                [7] = '↖',
-                [8] = '↙'
-            }
-
+                        Type: `table`
+                        Default: >lua
+                                { '↑', '↓', '→', '↗', '↘', '←', '↖', '↙' }
+<
 word_highlight                                        *matchwith-word-highlight*
 
-        (This feature is specific to the word_highlight branch.)
-        Enable/Disable word_highlight.
+                (This feature is specific to the word_highlight branch.)
+                Enable/Disable word_highlight.
 
-            Type: `boolean`
-            Default: false
+                        Type: `boolean`
+                        Default: false
 
-avoid-word-type                                       *matchwith_avod_word_type*
+avoid-word-type                                      *matchwith-avoid-word-type*
 
-        (This feature is specific to the word_highlight branch.)
-        Specifies the treesitter node that is not subject to word_highlight.
+                (This feature is specific to the word_highlight branch.)
+                Specifies the treesitter node that is not subject to
+                word_highlight.
 
-            Type: `table`
-            Default: {
-                'comment',
-                'string',
-                'codeblock',
-                'heading',
-                'delimiter'
-            }
+                        Type: `table`
+                        Default: >lua
+                        {
+                                'comment',
+                                'string',
+                                'codeblock',
+                                'heading',
+                                'delimiter'
+                        }
+<
 
 ------------------------------------------------------------------------------
 MAPPING                                                      *matchwith-mapping*
 
-Operator key to select matchpair range.
+The following <Plug> maps are available for operator-pending mode:
 
-<Plug>(matchwith-operator-i)
-
-        Inner range of the current or next matchpair.
-
-<Plug>(matchwith-operator-a)
-
-        A range of the current or next matchpair.
-
-<Plug>(matchwith-operator-parent-i)
-
-        Inner range of the parent matchpair.
-
-<Plug>(matchwith-operator-parent-i)
-
-        A range of the parent matchpair.
+<Plug>(matchwith-operator-i)          Inner range of current/next matchpair.
+<Plug>(matchwith-operator-a)          A range (inclusive) of current/next.
 
 ------------------------------------------------------------------------------
 HLGROUP                                                      *matchwith-hlgroup*
 
-*Matchwith*
+*Matchwith*            Current matchpair highlight.
+*MatchwithOut*         Current matchpair (off-screen).
+*MatchwithNext*        Next matchpair highlight.
+*MatchwithNextOut*     Next matchpair (off-screen).
+*MatchwithParent*      Parent matchpair highlight.
+*MatchwithParentOut*   Parent matchpair (off-screen).
+*MatchwithSign*        Symbols in the sign column.
+*MatchwithWord*        Word highlighting (word_highlight branch).
 
-        Used for matchpair
-
-*MatchwithOut*
-
-        Used when a matched pair is off-screen
-
-*MatchwithNext*
-
-        Used for next matchpair
-
-*MatchwithNextOut*
-
-        Used when a next matched pair is off-screen
-
-*MatchwithParent*
-
-        Used for a parent matchpair
-
-*MatchwithParentOut*
-
-        Used when a parant matched pair is off-screen
-
-*MatchwithSign*
-
-        Used for symbols displayed in signcolumn
-
-*@keyword.do.matchwith
-
-        Used for Treesitter node |do_statement| highlight
-
-        NOTE:
-        |do_statement| is originally set to `@keyword` in luascript.
-        |matchwith.nvim| highlights by rewriting the query. If you want to
-        adjust highlighting for other languages, add language-specific
-        settings to `matchwith/queries`.
-
-*MatchwithWord*
-
-        Used for word-highlight
-        (Only valid in the word_highlight branch.)
+*@keyword.do.matchwith*
+                Special highlight for Treesitter `do_statement` nodes.
+                Override this if you wish to change specific language behavior
+                via `matchwith/queries`.
 
 ==============================================================================
 DEPRECATED                                                *matchwith-deprecated*
