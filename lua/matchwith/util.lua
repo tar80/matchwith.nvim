@@ -7,7 +7,10 @@ local M = {}
 ---@param ... T
 ---@return T|nil
 function M.value_or_nil(bool, ...)
-  return vim.F.ok_or_nil(bool, ...)
+  if bool == true then
+    return ...
+  end
+  return nil
 end
 
 -- Returns a closure for formatting a message with a given "name".
@@ -38,6 +41,9 @@ end
 ---@param ... any The value to be inserted and its position in the list.
 ---@return nil
 function M.tbl_insert(tbl, key, ...)
+  if type(tbl) ~= 'table' then
+    error("Argument 'tbl' must be a table.")
+  end
   local args = { ... }
   local pos, value
   if #args < 2 then
