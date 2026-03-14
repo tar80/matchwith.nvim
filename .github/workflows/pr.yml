@@ -1,0 +1,69 @@
+name: Pull Request Test
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  test:
+    name: Test on Ubuntu
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    permissions:
+      pull-requests: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Neovim
+        uses: rhysd/action-setup-vim@v1
+        with:
+          neovim: true
+          version: "stable"
+
+      - name: Install Plenary
+        run: git clone --depth 1 https://github.com/nvim-lua/plenary.nvim ../plenary.nvim
+
+      - name: Run Tests
+        id: run_tests
+        run: |
+          nvim --headless -u tests/minimal_init.lua \
+          -c "lua local ok, res = pcall(function() return require('plenary.test_harness').test_directory('tests/', {minimal_init = 'tests/minimal_init.lua', timeout = 30000}) end); vim.wait(500); if not ok or res ~= 0 then vim.cmd('cquit') end" \
+          -c "qa!" 2>&1 | tee test_result.log
+
+      - name: Display Test Logs
+        if: always()
+        run: |
+          echo "==================== Test Log Output ===================="
+          if [ -f test_result.log ]; then
+            cat test_result.log
+          else
+            echo "Log file not found."
+          fi
+          echo "========================================================="
+
+      - name: Post Comment on Failure
+        if: failure() && github.event.pull_request.number != null
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ## ❌ CI Failure Detected (Ubuntu)
+            
+            **Test Failure**: One or more **Neovim** tests failed.
+            
+            You can check the detailed execution logs here:
+            🔗 [View detailed logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            
+            ---
+            *This is an automated message.*
+
+      - name: Upload Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs-ubuntu
+          path: test_result.log
