@@ -1,12 +1,16 @@
 name: Test and Merge
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 on:
   push:
     branches:
       - work
     paths:
-      - 'lua/**'
-      - 'tests/**'
-      - '.github/workflows/**'
+      - "lua/**"
+      - "tests/**"
+      - ".github/workflows/**"
+      - "Makefile"
   workflow_dispatch:
 
 jobs:
@@ -19,27 +23,28 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: StyLua (Lint)
-        uses: JohnnyMorganz/stylua-action@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          version: latest
-          args: --check lua/
-
       - name: Setup Neovim
         uses: rhysd/action-setup-vim@v1
         with:
           neovim: true
           version: "stable"
 
+      - name: Setup StyLua
+        uses: JohnnyMorganz/stylua-action@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          version: latest
+          args: --version
+
       - name: Install Plenary
-        run: git clone --depth 1 https://github.com/nvim-lua/plenary.nvim ../plenary.nvim
+        run: |
+          git clone --depth 1 https://github.com/nvim-lua/plenary.nvim /tmp/plenary.nvim
 
       - name: Run Tests
-        run: |
-          nvim --headless -u tests/_min_init.lua \
-          -c "lua local ok, res = pcall(function() return require('plenary.test_harness').test_directory('tests/', {minimal_init = 'tests/_min_init.lua', timeout = 30000}) end); vim.wait(500); if not ok or res ~= 0 then vim.cmd('cquit') end" \
-          -c "qa!"
+        env:
+          STYLUA_PATH: stylua
+          PLENARY_PATH: /tmp/plenary.nvim
+        run: make all
 
   deploy:
     if: github.repository_owner == 'tar80'
@@ -51,17 +56,14 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-
       - name: Automated Merge
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git checkout main
-
           if ! git merge origin/work --ff-only; then
             echo "Error: Fast-forward merge is not possible."
             exit 1
           fi
-
           git push origin main
           git push origin --delete work

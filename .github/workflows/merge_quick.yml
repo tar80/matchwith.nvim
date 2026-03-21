@@ -1,12 +1,17 @@
 name: Quick Merge
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 on:
   push:
     branches:
       - work
-    paths-ignore:
-      - 'lua/**'
-      - 'tests/**'
-      - '.github/workflows/**'
+    paths:
+          - '**'
+          - '!lua/**'
+          - '!tests/**'
+          - '!.github/**'
+          - '!Makefile'
   workflow_dispatch:
 
 jobs:
