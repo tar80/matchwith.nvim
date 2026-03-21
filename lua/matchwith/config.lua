@@ -114,6 +114,7 @@ function M.set_options(opts)
   vim.g.matchwith_sign = opts.sign
   if opts.captures then
     if vim.islist(opts.captures) then
+      ---@diagnostic disable-next-line: assign-type-mismatch
       opts.captures = { ['*'] = opts.captures }
       vim.notify_once(
         [=[matchwith.nvim: The opts.captures specification has been changed from an array to a table with filetype as the key.]=],

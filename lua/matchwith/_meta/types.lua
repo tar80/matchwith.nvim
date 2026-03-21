@@ -21,7 +21,7 @@
 ---@alias IsStartPoint boolean
 
 ---@class Options
----@field public captures? string[]
+---@field public captures? table<string,string[]>
 ---@field public debounce_time? integer
 ---@field public depth_limit? integer
 ---@field public ignore_buftypes? string[]
@@ -41,7 +41,7 @@
 ---@field public hlgroups {[hlKeys]:hlGroups}
 ---@field public hldetails {[hlGroups]: vim.api.keyset.highlight}
 ---@field public hl {[nodeScope]:{on:hlGroups,off:hlGroups}}
----@field public captures string[]
+---@field public captures table<string,string[]>
 ---@field public searchpairs SearchPairs
 ---@field public extends integer
 ---@field public precedes integer
