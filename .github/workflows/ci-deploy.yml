@@ -1,28 +1,38 @@
-name: Test and Merge
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+name: CI and Deploy
+
 on:
   push:
     branches:
       - work
-    paths:
-      - "lua/**"
-      - "tests/**"
-      - ".github/workflows/**"
-      - "Makefile"
   workflow_dispatch:
 
+concurrency:
+  group: ci-exclusive-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test:
-    name: Lint and Test
+  changes:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
+    outputs:
+      needs_test: ${{ steps.filter.outputs.logic }}
     steps:
       - uses: actions/checkout@v6
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            logic:
+              - 'lua/**'
+              - 'tests/**'
 
+  # 2. テスト実行Job
+  test:
+    needs: changes
+    if: needs.changes.outputs.needs_test == 'true'
+    name: Lint and Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
       - name: Setup Neovim
         uses: rhysd/action-setup-vim@v1
         with:
@@ -47,8 +57,11 @@ jobs:
         run: make all
 
   deploy:
-    if: github.repository_owner == 'tar80'
-    needs: test
+    if: |
+      always() &&
+      github.repository_owner == 'tar80' &&
+      (needs.test.result == 'success' || needs.test.result == 'skipped')
+    needs: [changes, test]
     runs-on: ubuntu-latest
     permissions:
       contents: write
