@@ -44,9 +44,25 @@ function M.setup(UNIQUE_NAME, Cache)
   end, { desc = ('%s: select matchpair range'):format(UNIQUE_NAME) })
   vim.keymap.set({ 'o', 'x' }, '<Plug>(matchwith-operator-parent-i)', function()
     operator_matchpair('i', true)
+    if vim.fn.has('nvim-0.13') == 0 then
+      vim.deprecate(
+        '<Plug>(matchwith-operator-parent-i)',
+        'the builtin Treesitter "in"',
+        'a future release',
+        'matchwith.nvim'
+      )
+    end
   end, { desc = ('%s: select inner matchpair'):format(UNIQUE_NAME) })
   vim.keymap.set({ 'o', 'x' }, '<Plug>(matchwith-operator-parent-a)', function()
     operator_matchpair('a', true)
+    if vim.fn.has('nvim-0.13') == 0 then
+      vim.deprecate(
+        '<Plug>(matchwith-operator-parent-a)',
+        'the builtin Treesitter "an"',
+        'a future release',
+        'matchwith.nvim'
+      )
+    end
   end, { desc = ('%s: select matchpair range'):format(UNIQUE_NAME) })
 end
 

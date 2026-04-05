@@ -25,7 +25,6 @@ jobs:
               - 'lua/**'
               - 'tests/**'
 
-  # 2. テスト実行Job
   test:
     needs: changes
     if: needs.changes.outputs.needs_test == 'true'
