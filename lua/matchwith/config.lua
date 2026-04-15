@@ -61,10 +61,10 @@ local _lazy_foreground_getter = function(name)
   local tbl = {}
   return function()
     if tbl[name] then
-      return tbl[name]
+      return tbl[name] or 0
     end
     tbl[name] = vim.api.nvim_get_hl(0, { name = name }).fg
-    return tbl[name]
+    return tbl[name] or 0
   end
 end
 
